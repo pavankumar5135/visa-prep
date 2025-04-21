@@ -24,3 +24,18 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure all interactive elements have pointer cursor */
+button, 
+a, 
+[role="button"],
+input[type="submit"],
+input[type="button"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Keep disabled buttons with default cursor */
+button:disabled {
+  cursor: default !important;
+}
