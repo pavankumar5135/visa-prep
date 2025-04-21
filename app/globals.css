@@ -39,3 +39,44 @@ input[type="button"],
 button:disabled {
   cursor: default !important;
 }
+
+/* Mobile responsiveness utilities */
+.xs\:hidden {
+  @media (max-width: 639px) {
+    display: none;
+  }
+}
+
+.xs\:inline {
+  @media (min-width: 640px) {
+    display: inline;
+  }
+}
+
+.xs\:block {
+  @media (min-width: 640px) {
+    display: block;
+  }
+}
+
+.xs\:flex {
+  @media (min-width: 640px) {
+    display: flex;
+  }
+}
+
+/* Additional responsive spacing for mobile */
+@media (max-width: 639px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  h1, h2, h3 {
+    word-break: break-word;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+}

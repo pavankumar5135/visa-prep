@@ -91,18 +91,27 @@ export function Conversation() {
           ></div>
         </div>
         <div className="flex justify-between mt-1 text-xs text-gray-500">
-          <span>Introduction</span>
-          <span>Purpose</span>
-          <span>Ties</span>
-          <span>Financial</span>
-          <span>Travel</span>
-          <span>Conclusion</span>
+          <span className="hidden xs:inline">Introduction</span>
+          <span className="hidden xs:inline">Purpose</span>
+          <span className="hidden xs:inline">Ties</span>
+          <span className="hidden xs:inline">Financial</span>
+          <span className="hidden xs:inline">Travel</span>
+          <span className="hidden xs:inline">Conclusion</span>
+          {/* Small dots for mobile */}
+          <div className="xs:hidden flex justify-between w-full">
+            {['intro', 'purpose', 'ties', 'financial', 'travel_history', 'complete'].map((stage) => (
+              <div 
+                key={stage} 
+                className={`h-2 w-2 rounded-full ${interviewStage === stage ? 'bg-blue-600' : 'bg-gray-300'}`}
+              ></div>
+            ))}
+          </div>
         </div>
       </div>
       
       {/* Current question display */}
-      <div className="w-full p-4 bg-blue-50 rounded-lg mb-2 min-h-16">
-        <p className="font-medium text-gray-700">
+      <div className="w-full p-3 sm:p-4 bg-blue-50 rounded-lg mb-2 min-h-16">
+        <p className="font-medium text-gray-700 text-sm sm:text-base">
           {conversation.status === 'connected' && !conversation.isSpeaking && currentQuestion 
             ? <span>Question: {currentQuestion}</span>
             : conversation.status === 'connected' && conversation.isSpeaking
@@ -113,30 +122,30 @@ export function Conversation() {
       </div>
       
       {/* Control buttons */}
-      <div className="flex gap-4 w-full">
+      <div className="flex gap-2 sm:gap-4 w-full">
         <button
           onClick={startConversation}
           disabled={conversation.status === 'connected'}
-          className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-blue-700 transition cursor-pointer"
+          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-blue-600 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-blue-700 transition cursor-pointer"
         >
           Start Interview
         </button>
         <button
           onClick={stopConversation}
           disabled={conversation.status !== 'connected'}
-          className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-red-600 transition cursor-pointer"
+          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-red-500 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-red-600 transition cursor-pointer"
         >
           End Interview
         </button>
       </div>
 
       {/* Status indicators */}
-      <div className="flex items-center justify-between w-full mt-2 px-2">
-        <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${conversation.status === 'connected' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-          <p className="text-sm text-gray-600">Status: {conversation.status === 'connected' ? 'Connected' : 'Disconnected'}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mt-2 px-2 text-xs sm:text-sm">
+        <div className="flex items-center mb-1 sm:mb-0">
+          <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full mr-2 ${conversation.status === 'connected' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+          <p className="text-gray-600">Status: {conversation.status === 'connected' ? 'Connected' : 'Disconnected'}</p>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-gray-600">
           {conversation.status === 'connected' && 
             (conversation.isSpeaking ? 'Interviewer is speaking' : 'Interviewer is listening')}
         </p>
@@ -144,9 +153,9 @@ export function Conversation() {
       
       {/* Feedback section - appears after interview is complete */}
       {interviewStage === 'complete' && feedback && (
-        <div className="w-full mt-6 p-4 bg-green-50 border border-green-100 rounded-lg">
+        <div className="w-full mt-4 sm:mt-6 p-3 sm:p-4 bg-green-50 border border-green-100 rounded-lg">
           <h3 className="font-semibold text-gray-800 mb-2">Interview Feedback</h3>
-          <p className="text-gray-700">{feedback}</p>
+          <p className="text-gray-700 text-sm sm:text-base">{feedback}</p>
         </div>
       )}
     </div>

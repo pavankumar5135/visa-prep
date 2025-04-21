@@ -219,9 +219,40 @@ export default function Dashboard() {
 
       {/* Main Content - Updated with improved layout */}
       <main className="container mx-auto px-4 md:px-6 py-6">
+        {/* Mobile Tabs - Only visible on mobile */}
+        <div className="md:hidden mb-6">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="flex overflow-x-auto scrollbar-hide">
+              <button 
+                onClick={() => setActiveTab('prepare')} 
+                className={`flex-1 whitespace-nowrap px-4 py-3 text-center font-medium ${activeTab === 'prepare' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
+              >
+                Practice
+              </button>
+              <button 
+                onClick={() => setActiveTab('history')} 
+                className={`flex-1 whitespace-nowrap px-4 py-3 text-center font-medium ${activeTab === 'history' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
+              >
+                History
+              </button>
+              <button 
+                onClick={() => setActiveTab('resources')} 
+                className={`flex-1 whitespace-nowrap px-4 py-3 text-center font-medium ${activeTab === 'resources' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
+              >
+                Resources
+              </button>
+              <button 
+                className="flex-1 whitespace-nowrap px-4 py-3 text-center font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Settings
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Left Sidebar - New component */}
-          <aside className="md:w-64 flex-shrink-0">
+          {/* Left Sidebar - New component - Hidden on mobile */}
+          <aside className="hidden md:block md:w-64 flex-shrink-0">
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <h2 className="font-medium">B1 Visa Interview Prep</h2>

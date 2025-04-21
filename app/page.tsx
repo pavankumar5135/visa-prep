@@ -29,6 +29,59 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 md:px-6 py-8">
+        {/* Mobile Pricing Card - Shown only on mobile */}
+        <div className="lg:hidden mb-6">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-3xl font-bold">$49.99</span>
+                <span className="text-gray-500 line-through">$99.99</span>
+              </div>
+              <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm font-medium inline-block mb-4">
+                50% OFF - Limited Time
+              </div>
+              <Link 
+                href="/dashboard" 
+                className="block w-full bg-blue-600 text-white text-center font-semibold py-3 rounded-lg hover:bg-blue-700 transition duration-300 mb-4 cursor-pointer"
+              >
+                Start Practicing Now
+              </Link>
+              <p className="text-gray-500 text-sm text-center">
+                30-Day Money-Back Guarantee
+              </p>
+            </div>
+            <div className="p-6">
+              <h3 className="font-semibold mb-4">This package includes:</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Unlimited AI mock interviews</span>
+                </li>
+                <li className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Detailed performance feedback</span>
+                </li>
+                <li className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>8 different interview scenarios</span>
+                </li>
+                <li className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Complete resource library</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column - Course Details */}
           <div className="lg:w-8/12">
@@ -43,13 +96,13 @@ export default function Home() {
                   priority
                 />
               </div>
-              <div className="p-6">
-                <h1 className="text-3xl font-bold mb-4">B1 Visa Interview AI Coach</h1>
+              <div className="p-4 sm:p-6">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4">B1 Visa Interview AI Coach</h1>
                 <p className="text-gray-600 mb-4">
                   Powered by artificial intelligence to help you practice and ace your B1 visa interview. 
                   Our AI-driven mock interviews simulate real consular officer questions and provide personalized feedback.
                 </p>
-                <div className="flex items-center mb-4">
+                <div className="flex flex-wrap items-center mb-4">
                   <div className="flex text-yellow-400 mr-2">
                     {[...Array(5)].map((_, i) => (
                       <svg key={i} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -83,7 +136,7 @@ export default function Home() {
             </div>
 
             {/* What You'll Learn */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">What You'll Learn</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-start">
@@ -246,8 +299,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column - Pricing Card (Fixed on Scroll) */}
-          <div className="lg:w-4/12">
+          {/* Right Column - Pricing Card (Fixed on Scroll) - Hidden on mobile */}
+          <div className="hidden lg:block lg:w-4/12">
             <div className="sticky top-24">
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="p-6 border-b border-gray-200">
@@ -313,20 +366,36 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Mobile CTA - Bottom of the page */}
+        <div className="lg:hidden mt-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-2xl font-bold">$49.99</span>
+              <span className="text-gray-500 line-through">$99.99</span>
+            </div>
+            <Link 
+              href="/dashboard" 
+              className="block w-full bg-blue-600 text-white text-center font-semibold py-4 rounded-lg hover:bg-blue-700 transition duration-300 text-lg"
+            >
+              Start Practicing Now
+            </Link>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-gray-300 py-8 mt-16">
+      <footer className="bg-gray-800 text-gray-300 py-8 mt-8 md:mt-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
+            <div className="mb-4 md:mb-0 text-center md:text-left">
               <h3 className="text-xl font-bold">B1 Visa Interview Prep</h3>
               <p className="mt-2">© 2025 All Rights Reserved</p>
             </div>
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-white">Privacy Policy</a>
-              <a href="#" className="hover:text-white">Terms of Service</a>
-              <a href="#" className="hover:text-white">Contact Us</a>
+            <div className="flex flex-wrap justify-center md:justify-end space-x-4">
+              <a href="#" className="hover:text-white mb-2 md:mb-0">Privacy Policy</a>
+              <a href="#" className="hover:text-white mb-2 md:mb-0">Terms of Service</a>
+              <a href="#" className="hover:text-white mb-2 md:mb-0">Contact Us</a>
             </div>
           </div>
         </div>
