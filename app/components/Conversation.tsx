@@ -131,53 +131,56 @@ export function Conversation() {
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       {/* Progress indicator */}
-      <div className="w-full mb-6">
-        {/* Track with stage indicators */}
-        <div className="relative w-full h-14 flex items-center">
-          {/* Progress track - placed first in DOM for proper z-index layering */}
-          <div className="absolute top-2 w-full h-1.5 bg-gray-200 rounded-full">
+      <div className="w-full mb-3">
+        <div className="relative pt-5 pb-8">
+          {/* Progress track - background track */}
+          <div className="absolute top-[10px] w-full h-1.5 bg-gray-200 rounded-full">
             <div 
               className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-in-out"
               style={{ width: `${getProgressPercentage()}%` }}
             />
           </div>
           
-          {/* Stage indicator dots & labels - positioned absolutely */}
-          {stageLabels.map((stage, index) => {
-            const position = index / (stageLabels.length - 1) * 100;
-            const isCurrentStage = interviewStage === stage.id;
-            const isPastStage = stageLabels.findIndex(s => s.id === interviewStage) > index;
-            
-            return (
-              <div 
-                key={stage.id}
-                className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                style={{ left: `${position}%` }}
-              >
-                {/* Dot */}
-                <div 
-                  className={`w-3 h-3 rounded-full z-10 ${
-                    isCurrentStage
-                      ? 'bg-blue-600 ring-2 ring-blue-200' 
-                      : isPastStage
-                        ? 'bg-blue-600' 
-                        : 'bg-gray-300'
-                  }`}
-                />
-                {/* Label - smaller text and better spacing */}
-                <span className={`text-[10px] sm:text-xs mt-1.5 max-w-[50px] sm:max-w-[80px] text-center leading-tight ${
-                  isCurrentStage ? 'text-blue-600 font-medium' : 'text-gray-500'
-                }`}>
-                  {stage.label}
-                </span>
-              </div>
-            );
-          })}
+          {/* Stage indicator dots & labels */}
+          <div className="relative flex justify-between">
+            {stageLabels.map((stage, index) => {
+              const isCurrentStage = interviewStage === stage.id;
+              const isPastStage = stageLabels.findIndex(s => s.id === interviewStage) >= index;
+              
+              return (
+                <div key={stage.id} className="flex flex-col items-center relative">
+                  {/* Dot with optional ring for current stage */}
+                  <div 
+                    className={`w-3 h-3 rounded-full ${
+                      isCurrentStage
+                        ? 'bg-blue-600 ring-2 ring-blue-100'
+                        : isPastStage
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300'
+                    }`}
+                  />
+                  {/* Label below dot */}
+                  <span 
+                    className={`absolute top-5 text-[9px] md:text-xs whitespace-nowrap transform -translate-x-1/2 left-1/2 ${
+                      isCurrentStage ? 'text-blue-600 font-medium' : 'text-gray-500 text-opacity-90'
+                    }`}
+                    style={{ 
+                      maxWidth: window.innerWidth < 640 ? '40px' : '60px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {stage.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Elapsed time indicator */}
         {isInterviewActive && (
-          <div className="flex justify-center items-center mt-3">
+          <div className="flex justify-center items-center mt-1">
             <span className="text-xs text-gray-500 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
