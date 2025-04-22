@@ -195,10 +195,10 @@ export default function Home() {
                   highlighted: false
                 }
               ].map((plan, index) => (
-                <div key={index} className={`rounded-lg shadow-lg divide-y divide-gray-200 ${plan.highlighted ? 'ring-2 ring-blue-500' : ''}`}>
+                <div key={index} className={`relative rounded-lg shadow-lg divide-y divide-gray-200 ${plan.highlighted ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="p-6">
                     {plan.highlighted && (
-                      <p className="absolute top-0 transform -translate-y-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      <p className="absolute top-0 left-1/2 transform -translate-y-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
                         Most Popular
                       </p>
                     )}

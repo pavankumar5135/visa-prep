@@ -19,26 +19,48 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="/#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</Link>
-          <Link href="/#how-it-works" className="text-gray-600 hover:text-blue-600 transition-colors">How It Works</Link>
-          <Link href="/#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</Link>
-          <Link href="/#faq" className="text-gray-600 hover:text-blue-600 transition-colors">FAQ</Link>
+        <div className="hidden md:flex md:items-center md:justify-center flex-1 max-w-2xl mx-auto">
+          <div className="flex justify-center space-x-8">
+            <Link 
+              href="/#features" 
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+            >
+              Features
+            </Link>
+            <Link 
+              href="/#how-it-works" 
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+            >
+              How It Works
+            </Link>
+            <Link 
+              href="/#pricing" 
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+            >
+              Pricing
+            </Link>
+            <Link 
+              href="/#faq" 
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+            >
+              FAQ
+            </Link>
+          </div>
         </div>
 
         {/* Auth Buttons - Desktop */}
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <Link href="/dashboard">
-              <Button>Go to Dashboard</Button>
+              <Button size="sm" className="whitespace-nowrap">Go to Dashboard</Button>
             </Link>
           ) : (
             <>
               <Link href="/login">
-                <Button variant="outline">Log In</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Log In</Button>
               </Link>
               <Link href="/signup">
-                <Button>Sign Up Free</Button>
+                <Button size="sm" className="whitespace-nowrap">Sign Up Free</Button>
               </Link>
             </>
           )}
