@@ -32,55 +32,56 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   // Fetch interview history from Eleven Labs API
-  useEffect(() => {
-    const fetchInterviewHistory = async () => {
-      if (activeTab === 'history') {
-        setIsLoading(true);
-        setError(null);
+  const fetchInterviewHistory = async () => {
+    if (activeTab === 'history') {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Replace with your actual API endpoint for Eleven Labs
+        const response = await fetch('https://api.elevenlabs.io/v1/history/interviews', {
+          headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.ELEVEN_LABS_API_KEY || '',
+          },
+        });
         
-        try {
-          // Replace with your actual API endpoint for Eleven Labs
-          const response = await fetch('https://api.elevenlabs.io/v1/history/interviews', {
-            headers: {
-              'Content-Type': 'application/json',
-              'xi-api-key': process.env.ELEVEN_LABS_API_KEY || '',
-            },
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Error fetching interview history: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          // Transform the API response to match our interface
-          // This transformation will depend on the actual API response structure
-          const formattedHistory: InterviewHistoryItem[] = data.map((item: any) => ({
-            id: item.id,
-            date: item.created_at || new Date().toISOString(),
-            duration: `${Math.round(item.duration / 60)} minutes`,
-            status: item.status || 'Completed',
-            score: item.score || calculateRandomScore(),
-            feedback: {
-              strengths: item.feedback?.strengths || generateDefaultStrengths(),
-              improvements: item.feedback?.improvements || generateDefaultImprovements(),
-              detailedFeedback: item.feedback?.detailed || generateDefaultFeedback(),
-            }
-          }));
-          
-          setInterviewHistory(formattedHistory);
-        } catch (err) {
-          console.error('Failed to fetch interview history:', err);
-          setError('Failed to load interview history. Please try again later.');
-          
-          // Fallback to demo data if API fails
-          setInterviewHistory(generateDemoHistory());
-        } finally {
-          setIsLoading(false);
+        if (!response.ok) {
+          throw new Error(`Error fetching interview history: ${response.status}`);
         }
+        
+        const data = await response.json();
+        
+        // Transform the API response to match our interface
+        // This transformation will depend on the actual API response structure
+        const formattedHistory: InterviewHistoryItem[] = data.map((item: any) => ({
+          id: item.id,
+          date: item.created_at || new Date().toISOString(),
+          duration: `${Math.round(item.duration / 60)} minutes`,
+          status: item.status || 'Completed',
+          score: item.score || calculateRandomScore(),
+          feedback: {
+            strengths: item.feedback?.strengths || generateDefaultStrengths(),
+            improvements: item.feedback?.improvements || generateDefaultImprovements(),
+            detailedFeedback: item.feedback?.detailed || generateDefaultFeedback(),
+          }
+        }));
+        
+        setInterviewHistory(formattedHistory);
+      } catch (err) {
+        console.error('Failed to fetch interview history:', err);
+        setError('Failed to load interview history. Please try again later.');
+        
+        // Fallback to demo data if API fails
+        setInterviewHistory(generateDemoHistory());
+      } finally {
+        setIsLoading(false);
       }
-    };
-    
+    }
+  };
+
+  // Use effect to fetch interview history when tab changes
+  useEffect(() => {
     fetchInterviewHistory();
   }, [activeTab]);
   
