@@ -48,22 +48,11 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Auth Buttons - Desktop */}
+        {/* Dashboard Button - Desktop */}
         <div className="hidden md:flex items-center gap-3">
-          {user ? (
-            <Link href="/dashboard">
-              <Button size="sm" className="whitespace-nowrap">Go to Dashboard</Button>
-            </Link>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="whitespace-nowrap">Log In</Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" className="whitespace-nowrap">Sign Up Free</Button>
-              </Link>
-            </>
-          )}
+          <Link href="/dashboard">
+            <Button size="sm" className="whitespace-nowrap">Go to Dashboard</Button>
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -118,20 +107,9 @@ export function Navbar() {
 
             <div className="border-t border-gray-100 my-2"></div>
 
-            {user ? (
-              <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                <Button fullWidth>Go to Dashboard</Button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" fullWidth>Log In</Button>
-                </Link>
-                <Link href="/signup" onClick={() => setIsMenuOpen(false)}>
-                  <Button fullWidth>Sign Up Free</Button>
-                </Link>
-              </>
-            )}
+            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+              <Button fullWidth>Go to Dashboard</Button>
+            </Link>
           </div>
         </div>
       )}

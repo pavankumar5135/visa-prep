@@ -12,12 +12,38 @@ interface ConversationMessage {
   source: Role;
 }
 
-export function Conversation() {
+// Define props interface to accept interview data
+interface ConversationProps {
+  interviewData?: {
+    name: string;
+    role: string;
+    visaType: string;
+    originCountry: string;
+    destinationCountry: string;
+    employer: string;
+    client: string;
+  } | null;
+}
+
+export function Conversation({ interviewData }: ConversationProps) {
   const [currentQuestion, setCurrentQuestion] = useState<string>('');
   const [feedback, setFeedback] = useState<string>('');
   const [interviewStage, setInterviewStage] = useState<string>('intro');
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isInterviewActive, setIsInterviewActive] = useState<boolean>(false);
+
+  // Get appropriate greeting based on time of day
+  const getTimeBasedGreeting = (): string => {
+    const hour = new Date().getHours();
+    
+    if (hour >= 5 && hour < 12) {
+      return 'Good morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good afternoon';
+    } else {
+      return 'Good evening';
+    }
+  };
 
   // Timer for tracking interview duration
   useEffect(() => {
@@ -88,13 +114,23 @@ export function Conversation() {
 
       // Start the conversation with your agent
       await conversation.startSession({
-        agentId: process.env.NEXT_PUBLIC_ELEVEN_LABS_AGENT_ID || '8xzGLFDx4PMsfYMFGWIb', // Explicit fallback to the original agent ID
+        agentId: process.env.NEXT_PUBLIC_ELEVEN_LABS_AGENT_ID || '8xzGLFDx4PMsfYMFGWIb',
+        dynamicVariables: {
+          greeting: getTimeBasedGreeting(),
+          name: interviewData?.name || 'John Doe',
+          role: interviewData?.role || 'Software Engineer',
+          visaType: interviewData?.visaType || 'H-1B',
+          originCountry: interviewData?.originCountry || 'India',
+          destinationCountry: interviewData?.destinationCountry || 'United States',
+          employer: interviewData?.employer || '',
+          client: interviewData?.client || '',
+        },
       });
 
     } catch (error) {
       console.error('Failed to start conversation:', error);
     }
-  }, [conversation]);
+  }, [conversation, interviewData]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();

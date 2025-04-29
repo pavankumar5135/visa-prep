@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Conversation } from '../components/Conversation';
 import { useAuth } from '../contexts/AuthContext';
+import IntakeForm from '../components/IntakeForm';
 
 // Define types for API responses
 interface InterviewFeedback {
@@ -22,14 +23,45 @@ interface InterviewHistoryItem {
   feedback: InterviewFeedback;
 }
 
+// Define form data types
+interface IntakeFormData {
+  name: string;
+  role: string;
+  visaType: string;
+  originCountry: string;
+  destinationCountry: string;
+  employer: string;
+  client: string;
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('practice');
   const [interviewHistory, setInterviewHistory] = useState<InterviewHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedInterviewId, setExpandedInterviewId] = useState<string | null>(null);
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [interviewData, setInterviewData] = useState<IntakeFormData | null>(null);
+  const [showConversation, setShowConversation] = useState(false);
   
   const { user } = useAuth();
+
+  // Handle the "Start New Practice" button click
+  const handleStartPractice = () => {
+    setShowIntakeForm(true);
+  };
+
+  // Handle intake form submission
+  const handleFormSubmit = (formData: IntakeFormData) => {
+    setInterviewData(formData);
+    setShowIntakeForm(false);
+    setShowConversation(true);
+  };
+
+  // Handle intake form cancellation
+  const handleFormCancel = () => {
+    setShowIntakeForm(false);
+  };
 
   // Fetch interview history from Eleven Labs API
   const fetchInterviewHistory = async () => {
@@ -175,27 +207,34 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Welcome back, {user?.name || 'there'}!
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Practice your B1 visa interview skills or review your past performance.
+    <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="py-5 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Visa Interview Practice</h1>
+          <p className="mt-1 text-gray-600 max-w-2xl">
+            Practice your interview skills with our AI assistant and get real-time feedback.
           </p>
         </div>
-        <div className="flex mt-4 md:mt-0 md:ml-4">
-          <span className="shadow-sm rounded-md">
             <button
               type="button"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out"
+          onClick={handleStartPractice}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
               Start New Practice
             </button>
-          </span>
-        </div>
       </div>
+
+      {/* Intake Form Modal */}
+      {showIntakeForm && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto transition-opacity animate-fadeIn">
+          <div className="w-full max-w-4xl animate-slideIn">
+            <IntakeForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div>
@@ -215,15 +254,18 @@ export default function Dashboard() {
         </div>
         <div className="hidden sm:block">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <nav className="flex space-x-8" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('practice')}
                 className={`${
                   activeTab === 'practice'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-all`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${activeTab === 'practice' ? 'text-blue-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
                 Practice
               </button>
               <button
@@ -232,8 +274,11 @@ export default function Dashboard() {
                   activeTab === 'history'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-all`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${activeTab === 'history' ? 'text-blue-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 History
               </button>
               <button
@@ -242,8 +287,11 @@ export default function Dashboard() {
                   activeTab === 'resources'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-all`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${activeTab === 'resources' ? 'text-blue-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 Resources
               </button>
             </nav>
@@ -251,232 +299,384 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Tab content */}
-      <div>
+      {/* Tab content container with shadow */}
+      <div className="mt-8 overflow-hidden">
         {activeTab === 'practice' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Practice Interview
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            {showConversation ? (
+              <div className="p-6">
+                <div className="p-6">
+                  <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 overflow-hidden shadow-sm">
+                    <div className="px-6 py-4 border-b border-blue-100 bg-white bg-opacity-60 backdrop-blur-sm flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Interview Details
               </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Speak with our AI visa officer to practice your interview skills.
-              </p>
+                      <button 
+                        onClick={() => {
+                          setShowConversation(false);
+                          setInterviewData(null);
+                        }}
+                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors px-3 py-1 rounded-full hover:bg-blue-50"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Start a different interview
+                      </button>
+                    </div>
+                    
+                    {interviewData && (
+                      <div className="p-6">
+                        <div className="flex flex-col sm:flex-row items-start mb-6">
+                          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 sm:mb-0 sm:mr-6">
+                            <span className="text-2xl font-bold text-blue-600">{interviewData.name.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-semibold text-gray-900 mb-1">{interviewData.name}</h4>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                                {interviewData.visaType}
+                              </span>
+                              <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium">
+                                {interviewData.role}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              Professional Details
+                            </h5>
+                            <div className="space-y-2">
+                              <div>
+                                <span className="text-xs text-gray-500">Role</span>
+                                <p className="text-sm font-medium text-gray-800">{interviewData.role}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs text-gray-500">Employer/College</span>
+                                <p className="text-sm font-medium text-gray-800">{interviewData.employer || "—"}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs text-gray-500">Client</span>
+                                <p className="text-sm font-medium text-gray-800">{interviewData.client || "—"}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                              </svg>
+                              Origin Details
+                            </h5>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-gray-800">{interviewData.originCountry.charAt(0)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Country</span>
+                                  <p className="text-sm font-medium text-gray-800">{interviewData.originCountry}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Destination Details
+                            </h5>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-gray-800">{interviewData.destinationCountry.charAt(0)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">Country</span>
+                                  <p className="text-sm font-medium text-gray-800">{interviewData.destinationCountry}</p>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-xs text-gray-500">Visa Type</span>
+                                <p className="text-sm font-medium text-gray-800">{interviewData.visaType}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Conversation interviewData={interviewData} />
+                </div>
+              </div>
+            ) : (
+              <div className="px-4 py-12 sm:p-10 text-center">
+                <div className="mx-auto h-24 w-24 text-gray-200 mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">No active interview</h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-8">
+                  Start a new practice session with our AI visa officer. You'll receive real-time feedback and improvement suggestions.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStartPractice}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-md text-white bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  Start New Practice
+                </button>
             </div>
-            <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-              <Conversation />
-            </div>
+            )}
           </div>
         )}
 
         {activeTab === 'history' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Interview History
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Review your past practice sessions and track your progress.
-              </p>
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            <div className="px-6 py-6 border-b border-gray-200 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Interview History</h3>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500">Track your progress and review feedback from past sessions.</p>
+              </div>
             </div>
-            <div className="border-t border-gray-200">
               {isLoading ? (
                 <div className="px-4 py-12 text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-sm text-gray-500">Loading your interview history...</p>
+                <svg className="animate-spin h-10 w-10 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-gray-500">Loading interview history...</p>
+              </div>
+            ) : error ? (
+              <div className="px-4 py-8 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-              ) : error ? (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-red-500">{error}</p>
+                <p className="text-sm text-red-500 mb-4">{error}</p>
                   <button
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-500"
                     onClick={fetchInterviewHistory}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Try again
+                  Try Again
                   </button>
                 </div>
               ) : interviewHistory.length === 0 ? (
                 <div className="px-4 py-12 text-center">
-                  <p className="text-gray-500">You haven't completed any practice interviews yet.</p>
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 mb-4">No interview history found.</p>
                   <button
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500"
                     onClick={() => setActiveTab('practice')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Start your first practice
+                  Complete Your First Interview
                   </button>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {interviewHistory.map((interview) => (
-                    <div key={interview.id} className="px-4 py-4 sm:px-6">
-                      {/* Interview item */}
-                      {/* ... keep existing interview history item code ... */}
+                {interviewHistory.map(interview => (
+                  <div key={interview.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => toggleInterviewDetails(interview.id)}>
+                    <div className="p-6">
+                      <div className="md:flex md:justify-between md:items-center">
+                        <div className="flex items-center">
+                          <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center mr-4 ${
+                            interview.score >= 80 ? 'bg-green-100' : 
+                            interview.score >= 70 ? 'bg-yellow-100' : 
+                            'bg-red-100'
+                          }`}>
+                            <span className={`text-sm font-medium ${
+                              interview.score >= 80 ? 'text-green-800' : 
+                              interview.score >= 70 ? 'text-yellow-800' : 
+                              'text-red-800'
+                            }`}>{interview.score}%</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {new Date(interview.date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                            <p className="flex items-center text-sm text-gray-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {interview.duration}
+                            </p>
             </div>
+          </div>
+                        
+                        <div className="mt-4 md:mt-0 flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            interview.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {interview.status}
+                          </span>
+                          <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ml-2 text-gray-400 transform transition-transform ${expandedInterviewId === interview.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+                    {expandedInterviewId === interview.id && (
+                      <div className="bg-blue-50 p-6 space-y-6 animate-fadeIn">
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div className="bg-white p-4 rounded-lg shadow-sm">
+                            <h4 className="text-sm font-medium text-gray-900 flex items-center mb-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Strengths
+                            </h4>
+                  <ul className="space-y-2">
+                              {interview.feedback.strengths.map((strength, index) => (
+                                <li key={index} className="flex items-start">
+                                  <span className="inline-block h-5 w-5 flex-shrink-0 text-green-500">•</span>
+                                  <span className="ml-2 text-sm text-gray-600">{strength}</span>
+                    </li>
+                              ))}
+                  </ul>
+                </div>
+                
+                          <div className="bg-white p-4 rounded-lg shadow-sm">
+                            <h4 className="text-sm font-medium text-gray-900 flex items-center mb-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              Areas for Improvement
+                            </h4>
+                            <ul className="space-y-2">
+                              {interview.feedback.improvements.map((improvement, index) => (
+                                <li key={index} className="flex items-start">
+                                  <span className="inline-block h-5 w-5 flex-shrink-0 text-yellow-500">•</span>
+                                  <span className="ml-2 text-sm text-gray-600">{improvement}</span>
+                                </li>
+                              ))}
+                            </ul>
+                </div>
+              </div>
+              
+                        <div className="bg-white p-4 rounded-lg shadow-sm">
+                          <h4 className="text-sm font-medium text-gray-900 flex items-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Detailed Feedback
+                          </h4>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {interview.feedback.detailedFeedback}
+                          </p>
+                  </div>
+                  </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'resources' && (
-          <div className="bg-white shadow sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                B1 Visa Resources
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                Essential information and guides to help you prepare for your B1 visa interview.
-              </p>
-            </div>
-            
-            <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-              {/* Search */}
-              <div className="max-w-lg w-full mx-auto mb-8">
-                <label htmlFor="search" className="sr-only">Search resources</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <input
-                    id="search"
-                    name="search"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Search for resources"
-                    type="search"
-                  />
-                </div>
-              </div>
-              
-              {/* Resource categories */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Official Documentation */}
-                <div className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">Official Documentation</h4>
-                  <p className="text-sm text-gray-500 mb-4">Access official guides and requirements from the U.S. Department of State.</p>
-                  <ul className="space-y-2">
-                    <li>
-                      <a href="https://travel.state.gov/content/travel/en/us-visas/business.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 text-sm">
-                        U.S. Business Visa Information
-                      </a>
-                    </li>
-                    <li>
-                      <a href="https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/forms.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 text-sm">
-                        Required Forms & Documentation
-                      </a>
-                    </li>
-                    <li>
-                      <a href="https://ceac.state.gov/genniv/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 text-sm">
-                        Visa Application Center
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-                
-                {/* FAQs */}
-                <div className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">FAQs</h4>
-                  <p className="text-sm text-gray-500 mb-4">Answers to the most commonly asked questions about B1 visas.</p>
-                  <button className="w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    View all FAQs
-                  </button>
-                </div>
-                
-                {/* Document Checklist */}
-                <div className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">Document Checklist</h4>
-                  <p className="text-sm text-gray-500 mb-4">Essential documents you need to prepare for your B1 visa application.</p>
-                  <button className="w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Download Checklist
-                  </button>
-                </div>
-              </div>
-              
-              {/* Common Questions */}
-              <div className="mt-8 border-t border-gray-200 pt-8">
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Common B1 Visa Interview Questions</h4>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  {/* Purpose of Visit */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-medium text-gray-900 mb-2">Purpose of Visit</h5>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• What is the purpose of your trip to the United States?</li>
-                      <li>• How long do you plan to stay in the United States?</li>
-                      <li>• Who will you be meeting with during your trip?</li>
-                      <li>• Can you describe your business activities in the U.S.?</li>
-                    </ul>
-                  </div>
-                  
-                  {/* Ties to Home Country */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-medium text-gray-900 mb-2">Ties to Home Country</h5>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• What is your current job position?</li>
-                      <li>• Do you own property in your home country?</li>
-                      <li>• What family members do you have in your home country?</li>
-                      <li>• Why will you return to your home country after your visit?</li>
-                    </ul>
-                  </div>
-                  
-                  {/* Financial Situation */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-medium text-gray-900 mb-2">Financial Situation</h5>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• How will you finance your trip to the United States?</li>
-                      <li>• What is your monthly income?</li>
-                      <li>• Who is covering the expenses for your trip?</li>
-                      <li>• Can you show proof of funds for your visit?</li>
-                    </ul>
-                  </div>
-                  
-                  {/* Previous Travel */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-medium text-gray-900 mb-2">Previous Travel</h5>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• Have you traveled to the United States before?</li>
-                      <li>• Have you ever been denied a visa to any country?</li>
-                      <li>• What other countries have you visited in the past 5 years?</li>
-                      <li>• Have you ever overstayed a visa in any country?</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Video Resources */}
-              <div className="mt-8 border-t border-gray-200 pt-8">
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Video Resources</h4>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                      <div className="flex items-center justify-center h-full">
-                        <svg className="h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+            <div className="px-6 py-6 border-b border-gray-200 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
+              <div>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">B1 Visa Resources</h3>
+                <p className="mt-1 max-w-2xl text-sm text-gray-500">Helpful information for your visa preparation.</p>
                       </div>
                     </div>
-                    <div className="p-4">
-                      <h5 className="font-medium text-gray-900">B1 Visa Interview Tips</h5>
-                      <p className="mt-1 text-sm text-gray-500">Learn the best practices for your B1 visa interview from experienced immigration consultants.</p>
+            <div className="p-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                {[
+                  {
+                    title: "Common Interview Questions",
+                    description: "Prepare with a list of frequently asked questions in B1 visa interviews.",
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Documentation Checklist",
+                    description: "Ensure you have all required documents for your visa application and interview.",
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Visa Approval Tips",
+                    description: "Expert advice on increasing your chances of visa approval.",
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Travel Regulations",
+                    description: "Current regulations and restrictions for business travel to the US.",
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )
+                  }
+                ].map((resource, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+                    <div className="p-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-blue-50 rounded-full p-3">
+                          {resource.icon}
+                        </div>
+                        <div className="ml-4">
+                          <h4 className="text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{resource.title}</h4>
+                          <p className="mt-1 text-sm text-gray-500">{resource.description}</p>
                     </div>
                   </div>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                      <div className="flex items-center justify-center h-full">
-                        <svg className="h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <div className="mt-4 flex justify-end">
+                        <a href="#" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                          View resource
+                          <svg xmlns="http://www.w3.org/2000/svg" className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
+                        </a>
                       </div>
                     </div>
-                    <div className="p-4">
-                      <h5 className="font-medium text-gray-900">Sample B1 Visa Interview</h5>
-                      <p className="mt-1 text-sm text-gray-500">Watch a mock B1 visa interview to understand what to expect and how to respond effectively.</p>
-                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

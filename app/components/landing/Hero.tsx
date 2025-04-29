@@ -72,7 +72,7 @@ export function Hero() {
                 <img
                   className="w-full"
                   src="/visa-interview.png"
-                  alt="B1 Visa Interview Practice"
+                  alt="Visa Interview Practice"
                 />
                 <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                   <Link href="/#video">
