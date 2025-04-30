@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAppSelector } from '../../store/hooks';
 import { Button } from '../ui/Button';
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user } = useAppSelector((state: { auth: any }) => state.auth);
 
   return (
     <nav className="bg-white border-b border-gray-100 py-4 px-4 md:px-6 lg:px-8">

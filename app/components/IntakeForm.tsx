@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // Define form data types
 interface IntakeFormData {
@@ -16,18 +18,37 @@ interface IntakeFormData {
 interface IntakeFormProps {
   onSubmit: (formData: IntakeFormData) => void;
   onCancel: () => void;
+  initialData?: IntakeFormData | null;
+  title?: string;
+  submitButtonText?: string;
+  showNavLink?: boolean;
 }
 
-export default function IntakeForm({ onSubmit, onCancel }: IntakeFormProps) {
-  // State for form data
-  const [formData, setFormData] = useState<IntakeFormData>({
-    name: '',
-    role: '',
-    visaType: '',
-    originCountry: '',
-    destinationCountry: '',
-    employer: '',
-    client: '',
+export default function IntakeForm({ 
+  onSubmit, 
+  onCancel, 
+  initialData,
+  title = "Visa Interview Details",
+  submitButtonText,
+  showNavLink = false
+}: IntakeFormProps) {
+  const router = useRouter();
+  const interviewLinkRef = useRef<HTMLAnchorElement>(null);
+  
+  // State for form data - use initialData if provided
+  const [formData, setFormData] = useState<IntakeFormData>(() => {
+    if (initialData) {
+      return initialData;
+    }
+    return {
+      name: '',
+      role: '',
+      visaType: '',
+      originCountry: '',
+      destinationCountry: '',
+      employer: '',
+      client: '',
+    };
   });
 
   // Handle input changes
@@ -44,6 +65,22 @@ export default function IntakeForm({ onSubmit, onCancel }: IntakeFormProps) {
     e.preventDefault();
     onSubmit(formData);
   };
+
+  // Handle clearing the form
+  const handleClearForm = () => {
+    setFormData({
+      name: '',
+      role: '',
+      visaType: '',
+      originCountry: '',
+      destinationCountry: '',
+      employer: '',
+      client: '',
+    });
+  };
+  
+  // Determine if we're in edit mode
+  const isEditMode = !!initialData;
 
   // Sample countries for dropdowns
   const countries = [
@@ -90,25 +127,35 @@ export default function IntakeForm({ onSubmit, onCancel }: IntakeFormProps) {
   ];
 
   // Visa types
-  const visaTypes = ['B1/B2', 'H1B'];
+  const visaTypes = ['B1', 'B2', 'F1', 'H-1B', 'J1', 'B1/B2'];
+
+  // Determine button text based on mode
+  const buttonText = submitButtonText || (isEditMode ? 'Save Changes' : 'Start AI Interview');
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-3xl mx-auto transform transition-all">
-      <div className="flex items-center justify-center mb-6">
-        <div className="bg-blue-600 rounded-full p-3 mr-3">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-3xl mx-auto transform transition-all w-full">
+      {/* Hidden link for direct navigation - only shown if needed */}
+      {showNavLink && (
+        <Link ref={interviewLinkRef} href="/interview" className="hidden">Navigate to Interview</Link>
+      )}
+      
+      <div className="flex items-center justify-center mb-4 sm:mb-6">
+        <div className="bg-blue-600 rounded-full p-2 sm:p-3 mr-2 sm:mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Visa Interview Details</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{title}</h2>
       </div>
       
-      <p className="text-gray-600 text-center mb-8">
-        Please provide your details to personalize your visa interview practice session.
+      <p className="text-sm sm:text-base text-gray-600 text-center mb-6 sm:mb-8">
+        {isEditMode 
+          ? "Update your details to personalize your visa interview practice session."
+          : "Please provide your details to personalize your visa interview practice session."}
       </p>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Name Input */}
           <div className="col-span-2">
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -127,7 +174,7 @@ export default function IntakeForm({ onSubmit, onCancel }: IntakeFormProps) {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm sm:text-base"
                 placeholder="Enter your full name"
               />
             </div>
@@ -319,25 +366,38 @@ export default function IntakeForm({ onSubmit, onCancel }: IntakeFormProps) {
         </div>
 
         {/* Form Actions */}
-        <div className="pt-6 border-t border-gray-200 mt-8">
+        <div className="pt-4 sm:pt-6 border-t border-gray-200 mt-6 sm:mt-8">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            >
-              Cancel
-            </button>
+            <div className="flex flex-col xs:flex-row gap-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-full xs:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                Cancel
+              </button>
+              
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleClearForm}
+                  className="w-full xs:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                  Clear Form
+                </button>
+              )}
+            </div>
+            
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3 rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105"
+              className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105 mt-2 sm:mt-0"
               style={{
                 background: 'linear-gradient(to right, #4f46e5, #3b82f6)',
               }}
             >
               <div className="flex items-center justify-center">
-                <span>Start AI Interview</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <span>{buttonText}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </div>

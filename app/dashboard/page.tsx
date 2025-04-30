@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Conversation } from '../components/Conversation';
-import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { setInterviewData } from '../store/slices/conversationSlice';
 import IntakeForm from '../components/IntakeForm';
+import AutoRedirect from '../redirect';
 
 // Define types for API responses
 interface InterviewFeedback {
@@ -23,7 +25,7 @@ interface InterviewHistoryItem {
   feedback: InterviewFeedback;
 }
 
-// Define form data types
+// Define form data types - ensure it matches the type in conversationSlice
 interface IntakeFormData {
   name: string;
   role: string;
@@ -43,19 +45,232 @@ export default function Dashboard() {
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [interviewData, setInterviewData] = useState<IntakeFormData | null>(null);
   const [showConversation, setShowConversation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showManualNavigation, setShowManualNavigation] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   
-  const { user } = useAuth();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state: { auth: any }) => state.auth);
 
+  const apikey = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
+  console.log(apikey,"apikey dashboard")
+  
+  // Effect to check URL parameters for edit mode
+  useEffect(() => {
+    // Check if we have edit=true in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const editParam = urlParams.get('edit');
+    
+    if (editParam === 'true') {
+      console.log('Edit param detected in URL, showing intake form');
+      
+      // Get the current interview data
+      const storedData = localStorage.getItem('interviewData');
+      if (storedData) {
+        try {
+          const parsedData = JSON.parse(storedData);
+          setInterviewData(parsedData);
+          
+          // Force show the form
+          setShowIntakeForm(true);
+          
+          // Make sure we're on the practice tab
+          setActiveTab('practice');
+          
+          // Clear the loading state
+          setIsSubmitting(false);
+        } catch (error) {
+          console.error('Failed to parse interview data from URL params:', error);
+        }
+      }
+    }
+  }, []);
+  
+  // Separate effect for the editInterviewData flag (keep this as a fallback)
+  useEffect(() => {
+    const editFlag = localStorage.getItem('editInterviewData');
+    if (editFlag === 'true') {
+      console.log('Edit flag detected in localStorage, showing intake form for editing');
+      
+      // Clear the edit flag
+      localStorage.removeItem('editInterviewData');
+      
+      // Set a flag to temporarily disable auto-redirect
+      localStorage.setItem('disableAutoRedirect', 'true');
+      
+      // Update the URL to include the edit=true parameter (no page reload)
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('edit', 'true');
+      newUrl.searchParams.set('t', Date.now().toString());
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Get the current interview data
+      const storedData = localStorage.getItem('interviewData');
+      if (storedData) {
+        try {
+          const parsedData = JSON.parse(storedData);
+          setInterviewData(parsedData);
+          
+          // Make sure the form is shown (this is the key part for direct editing)
+          setShowIntakeForm(true);
+          
+          // Also ensure we're on the practice tab
+          setActiveTab('practice');
+        } catch (error) {
+          console.error('Failed to parse interview data for editing:', error);
+        }
+      }
+    }
+  }, []);
+  
+  // Effect to determine if user is returning from a completed interview
+  useEffect(() => {
+    const completedFlag = localStorage.getItem('completedInterview');
+    if (completedFlag === 'true') {
+      setShowWelcomeBack(true);
+      // Clear the flag after 5 seconds
+      setTimeout(() => {
+        setShowWelcomeBack(false);
+        localStorage.removeItem('completedInterview');
+      }, 5000);
+    }
+  }, []);
+  
+  // Effect to ensure loading state doesn't persist too long
+  useEffect(() => {
+    // If the submitting state is active, set a failsafe timeout
+    if (isSubmitting) {
+      const timeoutId = setTimeout(() => {
+        console.log('Failsafe: Clearing submitting state after timeout');
+        setIsSubmitting(false);
+      }, 5000); // 5 seconds maximum loading time
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isSubmitting]);
+  
+  // Effect to clear flags and prevent redirect loops
+  useEffect(() => {
+    // Check URL parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEditMode = urlParams.get('edit') === 'true';
+    
+    // If we're in edit mode from URL, don't clear interview data
+    if (isEditMode) {
+      console.log('Edit mode detected in URL, preserving interview data');
+      
+      // Just clear the disableAutoRedirect flag after a delay
+      const timer = setTimeout(() => {
+        localStorage.removeItem('disableAutoRedirect');
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Check if we're coming from the interview page with disableAutoRedirect flag
+    // but aren't in edit mode
+    if (localStorage.getItem('disableAutoRedirect') === 'true' && !isEditMode) {
+      console.log('Clearing interview data on dashboard load (not in edit mode)');
+      
+      // Clear all interview related data to prevent redirect loop
+      localStorage.removeItem('interviewData');
+      localStorage.removeItem('hasStartedInterview');
+      localStorage.removeItem('interviewCompleted');
+
+      // Also remove the disableAutoRedirect flag
+      localStorage.removeItem('disableAutoRedirect');
+      
+      // Ensure any loading overlay is hidden
+      setIsSubmitting(false);
+    } else {
+      // If not coming from interview page, just clear the flag after a delay
+      const timer = setTimeout(() => {
+        localStorage.removeItem('disableAutoRedirect');
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+  
+  // Handle starting a completely new practice (clearing any existing data)
+  const handleStartNewPractice = () => {
+    // Clear all interview related data
+    localStorage.removeItem('interviewData');
+    localStorage.removeItem('editInterviewData');
+    localStorage.removeItem('disableAutoRedirect');
+    localStorage.removeItem('interviewCompleted');
+    localStorage.removeItem('completedInterview');
+    localStorage.removeItem('hasStartedInterview');
+    
+    // Reset state
+    setInterviewData(null);
+    
+    // Show the form
+    setShowIntakeForm(true);
+  };
+  
   // Handle the "Start New Practice" button click
   const handleStartPractice = () => {
-    setShowIntakeForm(true);
+    // If we have completed an interview previously, start fresh
+    if (localStorage.getItem('completedInterview') === 'true' || 
+        localStorage.getItem('interviewCompleted') === 'true') {
+      handleStartNewPractice();
+    } else {
+      // Otherwise just show the form with any existing data
+      setShowIntakeForm(true);
+    }
+  };
+
+  // Determine if we're in edit mode
+  const isEditMode = () => {
+    return interviewData !== null;
   };
 
   // Handle intake form submission
   const handleFormSubmit = (formData: IntakeFormData) => {
-    setInterviewData(formData);
+    console.log('Form submitted:', formData);
+    
+    // Show submitting state
+    setIsSubmitting(true);
+    
+    // Store the form data in localStorage for the interview page to access
+    localStorage.setItem('interviewData', JSON.stringify(formData));
+    
+    // Clear any flags that might prevent redirection
+    localStorage.removeItem('disableAutoRedirect');
+    localStorage.removeItem('editInterviewData');
+    
+    // Hide the form
     setShowIntakeForm(false);
-    setShowConversation(true);
+    
+    // Determine what navigation approach to use based on edit mode
+    if (isEditMode()) {
+      console.log('Returning to interview after editing');
+      // When in edit mode, use a simpler, more direct approach
+      window.location.href = '/interview';
+    } else {
+      // For new form submissions, use the more robust approach
+      console.log('Dashboard direct navigation to interview page');
+      
+      // Small delay to ensure localStorage is set
+      setTimeout(() => {
+        // The most direct and reliable navigation method
+        window.location.href = '/interview';
+      }, 100);
+      
+      // Show manual navigation button if we're still here after 3 seconds
+      setTimeout(() => {
+        if (window.location.pathname !== '/interview') {
+          setShowManualNavigation(true);
+        }
+      }, 3000);
+    }
+  };
+
+  // Direct navigation handler for manual button
+  const handleManualNavigation = () => {
+    window.location.href = '/interview';
   };
 
   // Handle intake form cancellation
@@ -206,32 +421,112 @@ export default function Dashboard() {
     ];
   };
 
+  // Check if we're in edit mode from URL parameters
+  const isUrlEditMode = () => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('edit') === 'true';
+    }
+    return false;
+  };
+  
+  // Combined check for any type of edit mode
+  const shouldShowIntakeForm = showIntakeForm || isUrlEditMode();
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="py-5 flex justify-between items-center">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+      {/* Auto-redirect if interview data is found */}
+      <AutoRedirect />
+      
+      {/* Welcome back message after completing interview */}
+      {showWelcomeBack && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-3 sm:p-4 mt-4 rounded-md animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex-shrink-0 mb-2 sm:mb-0">
+              <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="sm:ml-3">
+              <p className="text-sm text-green-700">
+                <strong>Great job!</strong> You've completed your practice interview. 
+                <button 
+                  onClick={handleStartNewPractice}
+                  className="ml-2 font-medium text-green-700 underline"
+                >
+                  Start another practice?
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div className="py-3 sm:py-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Visa Interview Practice</h1>
-          <p className="mt-1 text-gray-600 max-w-2xl">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Visa Interview Practice</h1>
+          <p className="mt-1 text-sm sm:text-base text-gray-600 max-w-2xl">
             Practice your interview skills with our AI assistant and get real-time feedback.
           </p>
         </div>
-            <button
-              type="button"
+        <button
+          type="button"
           onClick={handleStartPractice}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-              Start New Practice
-            </button>
+          Start New Practice
+        </button>
       </div>
 
+      {/* Loading Overlay during submission */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity animate-fadeIn">
+          <div className="bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-md w-full mx-2 text-center animate-slideIn shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 border-blue-600"></div>
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Preparing Interview...</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
+              Setting up your practice session. You'll be redirected automatically in a moment.
+            </p>
+            
+            {showManualNavigation && (
+              <div className="mt-4 animate-fadeIn">
+                <p className="text-yellow-600 mb-3 text-sm sm:text-base">
+                  Automatic redirection seems slow. Try the button below:
+                </p>
+                <button
+                  onClick={handleManualNavigation}
+                  className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 border border-transparent rounded-md shadow-sm text-xs sm:text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Go to Interview Page
+                </button>
+                
+                <div className="mt-4 text-xs sm:text-sm text-gray-500">
+                  <a href="/interview" className="underline hover:text-blue-600">
+                    Direct link to interview page
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Intake Form Modal */}
-      {showIntakeForm && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto transition-opacity animate-fadeIn">
+      {shouldShowIntakeForm && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto transition-opacity animate-fadeIn">
           <div className="w-full max-w-4xl animate-slideIn">
-            <IntakeForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
+            <IntakeForm 
+              onSubmit={handleFormSubmit} 
+              onCancel={handleFormCancel}
+              initialData={interviewData}
+              showNavLink={true}
+              submitButtonText={isEditMode() ? "Save Changes" : "Start AI Interview"}
+            />
           </div>
         </div>
       )}
@@ -302,148 +597,28 @@ export default function Dashboard() {
       {/* Tab content container with shadow */}
       <div className="mt-8 overflow-hidden">
         {activeTab === 'practice' && (
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            {showConversation ? (
-              <div className="p-6">
-                <div className="p-6">
-                  <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 overflow-hidden shadow-sm">
-                    <div className="px-6 py-4 border-b border-blue-100 bg-white bg-opacity-60 backdrop-blur-sm flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Interview Details
-              </h3>
-                      <button 
-                        onClick={() => {
-                          setShowConversation(false);
-                          setInterviewData(null);
-                        }}
-                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors px-3 py-1 rounded-full hover:bg-blue-50"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Start a different interview
-                      </button>
-                    </div>
-                    
-                    {interviewData && (
-                      <div className="p-6">
-                        <div className="flex flex-col sm:flex-row items-start mb-6">
-                          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 sm:mb-0 sm:mr-6">
-                            <span className="text-2xl font-bold text-blue-600">{interviewData.name.charAt(0)}</span>
-                          </div>
-                          <div>
-                            <h4 className="text-xl font-semibold text-gray-900 mb-1">{interviewData.name}</h4>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                                {interviewData.visaType}
-                              </span>
-                              <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium">
-                                {interviewData.role}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                              </svg>
-                              Professional Details
-                            </h5>
-                            <div className="space-y-2">
-                              <div>
-                                <span className="text-xs text-gray-500">Role</span>
-                                <p className="text-sm font-medium text-gray-800">{interviewData.role}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs text-gray-500">Employer/College</span>
-                                <p className="text-sm font-medium text-gray-800">{interviewData.employer || "—"}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs text-gray-500">Client</span>
-                                <p className="text-sm font-medium text-gray-800">{interviewData.client || "—"}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                              </svg>
-                              Origin Details
-                            </h5>
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
-                                  <span className="text-xs font-medium text-gray-800">{interviewData.originCountry.charAt(0)}</span>
-                                </div>
-                                <div>
-                                  <span className="text-xs text-gray-500">Country</span>
-                                  <p className="text-sm font-medium text-gray-800">{interviewData.originCountry}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white rounded-lg p-4 shadow-sm">
-                            <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Destination Details
-                            </h5>
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-6 h-6 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
-                                  <span className="text-xs font-medium text-gray-800">{interviewData.destinationCountry.charAt(0)}</span>
-                                </div>
-                                <div>
-                                  <span className="text-xs text-gray-500">Country</span>
-                                  <p className="text-sm font-medium text-gray-800">{interviewData.destinationCountry}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-xs text-gray-500">Visa Type</span>
-                                <p className="text-sm font-medium text-gray-800">{interviewData.visaType}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <Conversation interviewData={interviewData} />
-                </div>
+          <div className="bg-white shadow-lg rounded-xl overflow-hidden"> 
+            <div className="flex flex-col items-center py-16 px-6 text-center">
+              <div className="rounded-full bg-blue-100 p-5 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
               </div>
-            ) : (
-              <div className="px-4 py-12 sm:p-10 text-center">
-                <div className="mx-auto h-24 w-24 text-gray-200 mb-6">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">No active interview</h3>
-                <p className="text-gray-500 max-w-md mx-auto mb-8">
-                  Start a new practice session with our AI visa officer. You'll receive real-time feedback and improvement suggestions.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleStartPractice}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-md text-white bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                  Start New Practice
-                </button>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Ready to practice your interview?</h3>
+              <p className="text-gray-600 max-w-md mb-8">
+                Our AI-powered visa officer will guide you through a realistic interview experience and provide personalized feedback to help you improve.
+              </p>
+              <button
+                onClick={handleStartPractice}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Start New Interview
+              </button>
             </div>
-            )}
           </div>
         )}
 
