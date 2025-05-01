@@ -720,13 +720,6 @@ export default function InterviewPage() {
                   >
                     Return to Dashboard
                   </button>
-                  
-                  <button 
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-3 rounded-full border border-gray-300 shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-105"
-                  >
-                    Practice Again
-                  </button>
                 </div>
               </div>
             </div>

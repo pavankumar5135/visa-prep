@@ -14,11 +14,15 @@ NEXT_PUBLIC_ELEVEN_LABS_AGENT_ID=8xzGLFDx4PMsfYMFGWIb
 
 # Deepseek LLM API key for conversation analysis
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
+
+# Supabase Anon Key for edge function authorization
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 
 2. Replace the placeholders with your actual API keys:
    - Get an Eleven Labs API key from [Eleven Labs](https://elevenlabs.io/)
    - Get a Deepseek API key from [Deepseek](https://www.deepseek.com/)
+   - Get a Supabase Anon Key from your Supabase project settings
 
 Then, run the development server:
 

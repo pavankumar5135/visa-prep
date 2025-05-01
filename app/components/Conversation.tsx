@@ -135,14 +135,13 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
       dispatch(setInterviewActive(false));
       dispatch(setLoading(false));
       
-      // We'll rely on the stopConversation function to fetch details
-      // This is a backup in case convId is still available
-      if (convIdRef.current) {
-        console.log("Conversation ended, fetching details for convId:", convIdRef.current);
+      // Only call fetchConversationDetails here if it wasn't triggered by stopConversation
+      // We can detect this by checking if analysisPerformedRef.current is false
+      if (convIdRef.current && !analysisPerformedRef.current) {
+        console.log("Conversation ended naturally, fetching details for convId:", convIdRef.current);
         fetchConversationDetails(convIdRef.current);
       } else {
-        console.error("Cannot fetch conversation details: conversation ID is missing");
-        console.log("Note: This is expected if endSession was already called manually");
+        console.log("Skipping automatic analysis as it was either already performed or this is a manual disconnect");
       }
     },
     onMessage: (message: ConversationMessage) => {
@@ -270,10 +269,11 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
           try {
             console.log("Starting conversation analysis...");
             // Send transcript to our analysis API
-            const analysisResponse = await fetch('/api/analyzeConversation', {
+            const analysisResponse = await fetch('https://wwewdsmbtooeygsmymek.supabase.co/functions/v1/analyze-conversation', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
               },
               body: JSON.stringify({
                 transcript: data.transcript
@@ -435,6 +435,10 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
         return;
       }
 
+      // Set a flag for manual disconnect to prevent duplicate analysis from onDisconnect
+      console.log("Setting manual disconnect flag to prevent duplicate analysis");
+      analysisPerformedRef.current = true;
+
       // End the session first
       await conversation.endSession();
       
@@ -445,9 +449,16 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
       console.log("Waiting for conversation processing to complete...");
       await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
       
-      // Then fetch the conversation details
+      // Temporarily set the flag to false to allow analysis in fetchConversationDetails
+      console.log("Temporarily resetting analysis flag to allow analysis");
+      analysisPerformedRef.current = false;
+      
+      // Then fetch the conversation details and perform analysis
       console.log("Fetching conversation details after stopping, ID:", currentConvId);
       await fetchConversationDetails(currentConvId);
+      
+      // Set the flag back to true to prevent any further analysis
+      analysisPerformedRef.current = true;
     } catch (error) {
       console.error("Failed to stop conversation:", error);
     }
