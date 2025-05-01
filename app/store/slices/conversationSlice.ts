@@ -34,7 +34,7 @@ export interface ConversationState {
     originCountry: string;
     destinationCountry: string;
     employer: string;
-    client: string;
+    client?: string;
   } | null;
 }
 

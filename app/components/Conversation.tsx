@@ -35,7 +35,7 @@ interface ConversationProps {
     originCountry: string;
     destinationCountry: string;
     employer: string;
-    client: string;
+    client?: string;
   } | null;
   apiKey?: string; // Added API key option
   onViewFeedback?: () => void; // Callback to view feedback
