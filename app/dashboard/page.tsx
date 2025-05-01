@@ -33,7 +33,7 @@ interface IntakeFormData {
   originCountry: string;
   destinationCountry: string;
   employer: string;
-  client: string;
+  client?: string;
 }
 
 export default function Dashboard() {
