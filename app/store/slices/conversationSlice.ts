@@ -10,6 +10,22 @@ export interface ConversationState {
   isInterviewActive: boolean;
   isLoading: boolean;
   error: string | null;
+  // Add structured analysis data
+  analysis: {
+    overallImpression?: string;
+    strengths: string[];
+    improvements: string[];
+    specificFeedback?: string;
+    recommendations?: string;
+    fullAnalysis?: string;
+    detailedFeedback?: string;
+    score?: number;
+    comment?: string;
+    try_saying_it_like_this?: {
+      question: string;
+      suggested_answer: string;
+    };
+  } | null;
   // Add any interview data we want to store
   interviewData: {
     name: string;
@@ -32,6 +48,7 @@ const initialState: ConversationState = {
   isInterviewActive: false,
   isLoading: false,
   error: null,
+  analysis: null,
   interviewData: null
 };
 
@@ -67,12 +84,16 @@ export const conversationSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    setAnalysis: (state, action: PayloadAction<ConversationState['analysis']>) => {
+      state.analysis = action.payload;
+    },
     setInterviewData: (state, action: PayloadAction<ConversationState['interviewData']>) => {
       state.interviewData = action.payload;
     },
     resetConversation: (state) => {
       return { 
         ...initialState,
+        analysis: state.analysis,
         interviewData: state.interviewData // Keep interview data
       };
     }
@@ -90,6 +111,7 @@ export const {
   setInterviewActive,
   setLoading,
   setError,
+  setAnalysis,
   setInterviewData,
   resetConversation
 } = conversationSlice.actions;

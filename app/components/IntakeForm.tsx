@@ -1,19 +1,43 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+// Define schema for form validation
+const formSchema = z.object({
+  name: z.string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(50, { message: "Name must be less than 50 characters" }),
+  role: z.string()
+    .min(1, { message: "Please select a role" }),
+  visaType: z.string()
+    .min(2, { message: "Visa type must be at least 2 characters" })
+    .max(20, { message: "Visa type must be less than 20 characters" }),
+  originCountry: z.string()
+    .min(1, { message: "Please select your origin country" }),
+  destinationCountry: z.string()
+    .min(1, { message: "Please select your destination country" })
+    .refine(val => val !== "", { message: "Please select your destination country" }),
+  employer: z.string()
+    .min(2, { message: "Employer name must be at least 2 characters" })
+    .max(100, { message: "Employer name must be less than 100 characters" }),
+  client: z.string()
+    .max(100, { message: "Client name must be less than 100 characters" })
+    .optional(),
+}).refine(
+  (data) => data.originCountry !== data.destinationCountry || data.originCountry === "" || data.destinationCountry === "",
+  {
+    message: "Origin country and destination country cannot be the same",
+    path: ["destinationCountry"]
+  }
+);
 
 // Define form data types
-interface IntakeFormData {
-  name: string;
-  role: string;
-  visaType: string;
-  originCountry: string;
-  destinationCountry: string;
-  employer: string;
-  client: string;
-}
+type IntakeFormData = z.infer<typeof formSchema>;
 
 interface IntakeFormProps {
   onSubmit: (formData: IntakeFormData) => void;
@@ -34,13 +58,16 @@ export default function IntakeForm({
 }: IntakeFormProps) {
   const router = useRouter();
   const interviewLinkRef = useRef<HTMLAnchorElement>(null);
-  
-  // State for form data - use initialData if provided
-  const [formData, setFormData] = useState<IntakeFormData>(() => {
-    if (initialData) {
-      return initialData;
-    }
-    return {
+
+  // Initialize form with react-hook-form
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors },
+    reset
+  } = useForm<IntakeFormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData || {
       name: '',
       role: '',
       visaType: '',
@@ -48,27 +75,17 @@ export default function IntakeForm({
       destinationCountry: '',
       employer: '',
       client: '',
-    };
+    }
   });
 
-  // Handle input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const onSubmitForm = (data: IntakeFormData) => {
+    onSubmit(data);
   };
 
   // Handle clearing the form
   const handleClearForm = () => {
-    setFormData({
+    reset({
       name: '',
       role: '',
       visaType: '',
@@ -100,7 +117,6 @@ export default function IntakeForm({
     'Russia',
     'South Korea',
     'Philippines',
-    'Pakistan',
     'Bangladesh',
     'Italy',
     'Spain',
@@ -125,9 +141,6 @@ export default function IntakeForm({
     'Executive',
     'Other'
   ];
-
-  // Visa types
-  const visaTypes = ['B1', 'B2', 'F1', 'H-1B', 'J1', 'B1/B2'];
 
   // Determine button text based on mode
   const buttonText = submitButtonText || (isEditMode ? 'Save Changes' : 'Start AI Interview');
@@ -154,7 +167,7 @@ export default function IntakeForm({
           : "Please provide your details to personalize your visa interview practice session."}
       </p>
       
-      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4 sm:space-y-6">
         <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Name Input */}
           <div className="col-span-2">
@@ -170,14 +183,14 @@ export default function IntakeForm({
               <input
                 type="text"
                 id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm sm:text-base"
+                {...register("name")}
+                className={`w-full pl-10 pr-4 py-2 border ${errors.name ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:ring-2 transition-colors text-sm sm:text-base`}
                 placeholder="Enter your full name"
               />
             </div>
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+            )}
           </div>
 
           {/* Role Dropdown */}
@@ -193,11 +206,8 @@ export default function IntakeForm({
               </div>
               <select
                 id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                {...register("role")}
+                className={`w-full pl-10 pr-10 py-2 border ${errors.role ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg appearance-none focus:ring-2 bg-white transition-colors`}
               >
                 <option value="" disabled>Select your role</option>
                 {roles.map((role) => (
@@ -212,9 +222,12 @@ export default function IntakeForm({
                 </svg>
               </div>
             </div>
+            {errors.role && (
+              <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+            )}
           </div>
 
-          {/* Visa Type Dropdown */}
+          {/* Visa Type Text Input */}
           <div>
             <label htmlFor="visaType" className="block text-sm font-medium text-gray-700 mb-1">
               Visa Type
@@ -225,27 +238,17 @@ export default function IntakeForm({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <select
+              <input
+                type="text"
                 id="visaType"
-                name="visaType"
-                value={formData.visaType}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
-              >
-                <option value="" disabled>Select visa type</option>
-                {visaTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+                {...register("visaType")}
+                className={`w-full pl-10 pr-4 py-2 border ${errors.visaType ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:ring-2 transition-colors`}
+                placeholder="Enter visa type (e.g. B1, H-1B)"
+              />
             </div>
+            {errors.visaType && (
+              <p className="mt-1 text-sm text-red-600">{errors.visaType.message}</p>
+            )}
           </div>
 
           {/* Origin Country Dropdown */}
@@ -261,11 +264,8 @@ export default function IntakeForm({
               </div>
               <select
                 id="originCountry"
-                name="originCountry"
-                value={formData.originCountry}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                {...register("originCountry")}
+                className={`w-full pl-10 pr-10 py-2 border ${errors.originCountry ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg appearance-none focus:ring-2 bg-white transition-colors`}
               >
                 <option value="" disabled>Select your country</option>
                 {countries.map((country) => (
@@ -280,6 +280,9 @@ export default function IntakeForm({
                 </svg>
               </div>
             </div>
+            {errors.originCountry && (
+              <p className="mt-1 text-sm text-red-600">{errors.originCountry.message}</p>
+            )}
           </div>
 
           {/* Destination Country Dropdown */}
@@ -295,11 +298,8 @@ export default function IntakeForm({
               </div>
               <select
                 id="destinationCountry"
-                name="destinationCountry"
-                value={formData.destinationCountry}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                {...register("destinationCountry")}
+                className={`w-full pl-10 pr-10 py-2 border ${errors.destinationCountry ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg appearance-none focus:ring-2 bg-white transition-colors`}
               >
                 <option value="" disabled>Select destination country</option>
                 {countries.map((country) => (
@@ -314,6 +314,9 @@ export default function IntakeForm({
                 </svg>
               </div>
             </div>
+            {errors.destinationCountry && (
+              <p className="mt-1 text-sm text-red-600">{errors.destinationCountry.message}</p>
+            )}
           </div>
 
           {/* Employer Input */}
@@ -330,20 +333,20 @@ export default function IntakeForm({
               <input
                 type="text"
                 id="employer"
-                name="employer"
-                value={formData.employer}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                {...register("employer")}
+                className={`w-full pl-10 pr-4 py-2 border ${errors.employer ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:ring-2 transition-colors`}
                 placeholder="Enter employer or college name"
               />
             </div>
+            {errors.employer && (
+              <p className="mt-1 text-sm text-red-600">{errors.employer.message}</p>
+            )}
           </div>
 
-          {/* Client Input */}
+          {/* Client Input (Optional) */}
           <div>
             <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1">
-              Your Client
+              Your Client <span className="text-xs text-gray-500">(Optional)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -354,14 +357,14 @@ export default function IntakeForm({
               <input
                 type="text"
                 id="client"
-                name="client"
-                value={formData.client}
-                onChange={handleChange}
-                required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your client's name"
+                {...register("client")}
+                className={`w-full pl-10 pr-4 py-2 border ${errors.client ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:ring-2 transition-colors`}
+                placeholder="Enter your client's name (optional)"
               />
             </div>
+            {errors.client && (
+              <p className="mt-1 text-sm text-red-600">{errors.client.message}</p>
+            )}
           </div>
         </div>
 
@@ -372,7 +375,7 @@ export default function IntakeForm({
               <button
                 type="button"
                 onClick={onCancel}
-                className="w-full xs:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                className="w-full xs:w-auto px-8 py-3 border border-gray-300 rounded-2xl shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancel
               </button>
@@ -381,7 +384,7 @@ export default function IntakeForm({
                 <button
                   type="button"
                   onClick={handleClearForm}
-                  className="w-full xs:w-auto px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                  className="w-full xs:w-auto px-8 py-3 border border-gray-300 rounded-2xl shadow-sm text-lg font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                 >
                   Clear Form
                 </button>
@@ -390,17 +393,15 @@ export default function IntakeForm({
             
             <button
               type="submit"
-              className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 rounded-lg shadow-sm text-xs sm:text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105 mt-2 sm:mt-0"
+              className="w-full sm:w-auto px-8 py-3 rounded-2xl shadow-md text-lg font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105 mt-2 sm:mt-0 flex items-center justify-center"
               style={{
                 background: 'linear-gradient(to right, #4f46e5, #3b82f6)',
               }}
             >
-              <div className="flex items-center justify-center">
-                <span>{buttonText}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </div>
+              <span>{buttonText}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </button>
           </div>
         </div>

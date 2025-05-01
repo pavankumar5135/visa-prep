@@ -13,7 +13,8 @@ import {
   setInterviewActive,
   setLoading,
   setError as setConversationError,
-  setInterviewData
+  setInterviewData,
+  setAnalysis
 } from "../store/slices/conversationSlice";
 
 // Import or define the Role type to match the library's type
@@ -58,6 +59,15 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
   // Track if interview has been started in this session
   const [hasStartedOnce, setHasStartedOnce] = useState(false);
   
+  // Track if analysis is in progress
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Use a ref to maintain the conversation ID across renders and async operations
+  const convIdRef = useRef<string>("");
+  
+  // Use a ref to track if analysis has been performed
+  const analysisPerformedRef = useRef<boolean>(false);
+  
   // Initialize hasStartedOnce from localStorage on component mount
   useEffect(() => {
     const hasStarted = localStorage.getItem('hasStartedInterview') === 'true';
@@ -70,9 +80,6 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
       dispatch(setInterviewData(interviewData));
     }
   }, [interviewData, dispatch]);
-  
-  // Use a ref to maintain the conversation ID across renders and async operations
-  const convIdRef = useRef<string>("");
   
   // Keep the ref in sync with the Redux state
   useEffect(() => {
@@ -207,29 +214,119 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
       return null;
     }
     
+    setIsAnalyzing(true); // Set analyzing state to true
+    
     try {
       console.log("Attempting to fetch conversation details for ID:", conversationId);
-      const response = await fetch(`/api/conversationDetails?conversationId=${conversationId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(apiKey ? { 'x-api-key': apiKey } : {}),
-        },
-      });
-  
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`API Error (${response.status}):`, errorText);
-        throw new Error(`Failed to fetch conversation details: ${response.statusText}`);
+      
+      // Maximum number of polling attempts
+      const maxAttempts = 10;
+      // Delay between polling attempts in milliseconds
+      const pollingDelay = 2000; // 2 seconds
+      
+      let attempts = 0;
+      let status = "in-progress";
+      let data = null;
+      
+      // Poll until we get a completed or failed status, or reach max attempts
+      while (attempts < maxAttempts && (status === "in-progress" || status === "processing")) {
+        // If not the first attempt, wait before polling again
+        if (attempts > 0) {
+          await new Promise(resolve => setTimeout(resolve, pollingDelay));
+        }
+        
+        attempts++;
+        console.log(`Fetching conversation details - attempt ${attempts}/${maxAttempts}`);
+        
+        const response = await fetch(`/api/conversationDetails?conversationId=${conversationId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+          },
+        });
+    
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`API Error (${response.status}):`, errorText);
+          throw new Error(`Failed to fetch conversation details: ${response.statusText}`);
+        }
+    
+        data = await response.json();
+        console.log(`Conversation details - Status: ${data.status}, Attempt: ${attempts}/${maxAttempts}`);
+        
+        status = data.status;
+        
+        // Break the loop if we have a final status
+        if (status === "completed" || status === "failed") {
+          break;
+        }
       }
-  
-      const data = await response.json();
-      console.log('Conversation Details retrieved successfully:', data);
-      // Process the conversation details as needed
+      
+      // Check if we have transcript data for analysis
+      if (data && data.transcript && Array.isArray(data.transcript) && data.transcript.length > 0) {
+        // Only perform analysis if it hasn't been done yet
+        if (!analysisPerformedRef.current) {
+          try {
+            console.log("Starting conversation analysis...");
+            // Send transcript to our analysis API
+            const analysisResponse = await fetch('/api/analyzeConversation', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                transcript: data.transcript
+              }),
+            });
+            
+            if (!analysisResponse.ok) {
+              console.error('Analysis API error:', await analysisResponse.text());
+              throw new Error('Failed to analyze conversation');
+            }
+            
+            const analysisData = await analysisResponse.json();
+            console.log('Conversation analysis completed:', analysisData);
+            
+            // Store the full analysis text in feedback
+            const combinedFeedback = analysisData.analysis.fullAnalysis || 
+              "Your interview responses have been analyzed. Review the detailed feedback for insights on your performance and areas for improvement.";
+            
+            // Store the analyzed feedback in Redux
+            dispatch(setFeedback(combinedFeedback));
+            
+            // Store the structured analysis data
+            if (analysisData.analysis) {
+              // Check if the analysis data contains the try_saying_it_like_this field
+              // and preserve it with the exact structure from the API
+              if (analysisData.analysis.try_saying_it_like_this) {
+                console.log('Analysis includes try_saying_it_like_this:', analysisData.analysis.try_saying_it_like_this);
+              }
+              dispatch(setAnalysis(analysisData.analysis));
+            }
+            
+            // Mark that analysis has been performed
+            analysisPerformedRef.current = true;
+          } catch (analysisError) {
+            console.error('Error analyzing conversation:', analysisError);
+          }
+        } else {
+          console.log('Skipping analysis as it has already been performed');
+        }
+      } else {
+        if (attempts >= maxAttempts) {
+          console.log(`Max polling attempts (${maxAttempts}) reached without getting transcript data`);
+        } else {
+          console.log('No transcript data available for analysis');
+        }
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching conversation details:', error);
       return null;
+    } finally {
+      setIsAnalyzing(false); // Set analyzing state to false regardless of outcome
     }
   };
   
@@ -338,24 +435,19 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
         return;
       }
 
-      // Set a flag to indicate we're manually stopping the conversation
-      // This will prevent double fetching of conversation details
-      const isManualStop = true;
-      
-      // First fetch the conversation details before ending the session
-      if (isManualStop) {
-        console.log("Fetching conversation details before stopping, ID:", currentConvId);
-        await fetchConversationDetails(currentConvId);
-      }
-      
-      // Now end the session
+      // End the session first
       await conversation.endSession();
       
-      // Update the interview stage and clear the hasStartedInterview flag
-      // to allow a fresh start from the dashboard
+      // Update the interview stage
       dispatch(setInterviewStage("complete"));
       
-      // Note: We don't need to fetch again after ending since we already did
+      // Wait a short delay to allow the conversation service to finish processing
+      console.log("Waiting for conversation processing to complete...");
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+      
+      // Then fetch the conversation details
+      console.log("Fetching conversation details after stopping, ID:", currentConvId);
+      await fetchConversationDetails(currentConvId);
     } catch (error) {
       console.error("Failed to stop conversation:", error);
     }
@@ -407,11 +499,12 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
     window.location.href = '/dashboard';
   }, []);
 
-  // When viewing feedback, clear the hasStartedInterview flag
-  const handleViewFeedback = useCallback(() => {
+  // When viewing feedback, clear the hasStartedInterview flag and get conversation analysis
+  const handleViewFeedback = useCallback(async () => {
     // Clear the hasStarted flag to allow starting a new interview from dashboard
     localStorage.removeItem('hasStartedInterview');
     
+    // We don't need to re-fetch or re-analyze the conversation since it was already done during disconnect
     if (onViewFeedback) {
       onViewFeedback();
     }
@@ -434,17 +527,24 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
           <p className="text-gray-600 mb-6">
             Congratulations! You've successfully completed your visa interview practice. Your session lasted {formatTime(elapsedTime)}.
           </p>
-          <button
-            onClick={handleViewFeedback}
-            className="px-6 py-3 rounded-full shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105"
-          >
-            <div className="flex items-center justify-center">
-              <span>View Your Feedback</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+          {isAnalyzing ? (
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-green-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Analyzing your interview performance...</p>
             </div>
-          </button>
+          ) : (
+            <button
+              onClick={handleViewFeedback}
+              className="px-6 py-3 rounded-full shadow-md text-sm font-medium text-white bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-105"
+            >
+              <div className="flex items-center justify-center">
+                <span>View Your Feedback</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </div>
+            </button>
+          )}
         </div>
       ) : (
         /* Main Interview Interface */

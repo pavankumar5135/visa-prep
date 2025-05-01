@@ -2,7 +2,25 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, set up your environment variables:
+
+1. Create a `.env.local` file in the project root with the following content:
+
+```
+# Eleven Labs API key for visa interview conversation agent
+ELEVEN_LABS_API_KEY=your_eleven_labs_api_key_here
+NEXT_PUBLIC_ELEVENLABS_API_KEY=your_public_eleven_labs_api_key_here
+NEXT_PUBLIC_ELEVEN_LABS_AGENT_ID=8xzGLFDx4PMsfYMFGWIb
+
+# Deepseek LLM API key for conversation analysis
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+```
+
+2. Replace the placeholders with your actual API keys:
+   - Get an Eleven Labs API key from [Eleven Labs](https://elevenlabs.io/)
+   - Get a Deepseek API key from [Deepseek](https://www.deepseek.com/)
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -19,6 +37,19 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Features
+
+- Visa interview practice with AI
+- Real-time conversation with a virtual immigration officer
+- Analysis of your performance using Deepseek LLM
+- Detailed feedback on your interview responses, including:
+  - Overall impression
+  - Strengths
+  - Areas for improvement
+  - Specific feedback on key moments
+  - Recommendations for improvement
+- Progress tracking and improvement suggestions
 
 ## Learn More
 
