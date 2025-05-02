@@ -17,12 +17,23 @@ DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 # Supabase Anon Key for edge function authorization
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Supabase URL for authentication
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url_here
 ```
 
 2. Replace the placeholders with your actual API keys:
    - Get an Eleven Labs API key from [Eleven Labs](https://elevenlabs.io/)
    - Get a Deepseek API key from [Deepseek](https://www.deepseek.com/)
-   - Get a Supabase Anon Key from your Supabase project settings
+   - Get a Supabase URL and Anon Key from your Supabase project settings
+
+3. Install Supabase packages:
+```bash
+# Run the install script
+bash install-supabase.sh
+# Or manually install
+npm install @supabase/supabase-js @supabase/ssr
+```
 
 Then, run the development server:
 
@@ -54,6 +65,19 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
   - Specific feedback on key moments
   - Recommendations for improvement
 - Progress tracking and improvement suggestions
+- Authentication with Supabase
+- JWT Token authentication via URL (e.g., `example.com/dashboard?token=your_jwt_token`)
+
+## JWT Token Authentication
+
+This application supports authentication using JWT tokens passed via URL. When a user is redirected to this application with a JWT token in the URL (e.g., `example.com/dashboard?token=your_jwt_token`), the application will:
+
+1. Detect the token in the URL
+2. Redirect to a token handler page
+3. Authenticate the user with Supabase using the token
+4. Redirect the user back to the original page
+
+This feature is useful for integrating with other applications that need to authenticate users in this application.
 
 ## Learn More
 

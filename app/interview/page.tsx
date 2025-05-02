@@ -6,6 +6,7 @@ import { Conversation } from '../components/Conversation';
 import { useAppSelector } from '../store/hooks';
 import IntakeForm from '../components/IntakeForm';
 import { useSelector } from 'react-redux';
+import { createClient } from '@/app/utils/supabase/client';
 
 // Define the RootState type that includes the conversation state
 interface RootState {
@@ -57,6 +58,8 @@ export default function InterviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   
   // Modal states
   const [showBackConfirmModal, setShowBackConfirmModal] = useState(false);
@@ -76,7 +79,41 @@ export default function InterviewPage() {
   // Reference to Redux state
   const analysis = useSelector((state: RootState) => state.conversation.analysis);
   
+  // Check Supabase Authentication
   useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error || !data?.user) {
+          console.log('User not authenticated, redirecting to dashboard');
+          // User is not authenticated, redirect to dashboard
+          // Add a message to show on dashboard
+          localStorage.setItem('authError', 'You must be logged in to access the interview page');
+          router.push('/dashboard');
+          return;
+        } else {
+          setSupabaseUser(data.user);
+          console.log('Authenticated user on interview page:', data.user);
+          setAuthChecked(true);
+        }
+      } catch (err) {
+        console.error('Authentication check error:', err);
+        // On error, redirect to dashboard
+        localStorage.setItem('authError', 'Authentication error. Please try again.');
+        router.push('/dashboard');
+        return;
+      }
+    }
+    
+    checkAuth();
+  }, [router]);
+  
+  useEffect(() => {
+    // Only retrieve interview data if authenticated
+    if (!authChecked) return;
+    
     // Retrieve interview data from localStorage
     const storedData = localStorage.getItem('interviewData');
     
@@ -91,10 +128,15 @@ export default function InterviewPage() {
       } catch (error) {
         console.error('Failed to parse interview data:', error);
       }
+    } else {
+      // If no interview data, redirect back to dashboard
+      console.log('No interview data found, redirecting to dashboard');
+      router.push('/dashboard');
+      return;
     }
     
     setIsLoading(false);
-  }, []);
+  }, [authChecked, router]);
   
   const handleBack = () => {
     // Show modal instead of alert
