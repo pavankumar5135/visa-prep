@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/app/utils/supabase/client';
 import IntakeForm from '../components/IntakeForm';
@@ -18,7 +18,8 @@ interface IntakeFormData {
   client?: string;
 }
 
-export default function SimplifiedDashboard() {
+// Create a content component that uses searchParams
+function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
@@ -307,5 +308,19 @@ export default function SimplifiedDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">Loading dashboard...</p>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 } 

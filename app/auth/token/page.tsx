@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/app/utils/supabase/client'
 
-export default function TokenHandler() {
+// Create a separate component to use searchParams
+function TokenHandlerContent() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -69,5 +70,19 @@ export default function TokenHandler() {
         </div>
       )}
     </div>
+  )
+}
+
+// Main component with Suspense boundary
+export default function TokenHandler() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+        <p>Loading authentication handler...</p>
+      </div>
+    }>
+      <TokenHandlerContent />
+    </Suspense>
   )
 } 
