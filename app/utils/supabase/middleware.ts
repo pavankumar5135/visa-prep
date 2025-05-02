@@ -13,11 +13,12 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        async get(name: string) {
+          const cookie = await request.cookies.get(name)
+          return cookie?.value
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
+        async set(name: string, value: string, options: CookieOptions) {
+          await request.cookies.set({
             name,
             value,
             ...options,
@@ -27,14 +28,14 @@ export async function updateSession(request: NextRequest) {
               headers: request.headers,
             },
           })
-          response.cookies.set({
+          await response.cookies.set({
             name,
             value,
             ...options,
           })
         },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
+        async remove(name: string, options: CookieOptions) {
+          await request.cookies.set({
             name,
             value: '',
             ...options,
@@ -44,7 +45,7 @@ export async function updateSession(request: NextRequest) {
               headers: request.headers,
             },
           })
-          response.cookies.set({
+          await response.cookies.set({
             name,
             value: '',
             ...options,

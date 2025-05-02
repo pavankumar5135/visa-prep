@@ -4,10 +4,6 @@ const nextConfig = {
   async redirects() {
     return [];
   },
-  // Use APP directory
-  experimental: {
-    appDir: true,
-  },
   // Disable server components to ensure client-side navigation works properly
   reactStrictMode: true,
 };
