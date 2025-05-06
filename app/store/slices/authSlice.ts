@@ -5,6 +5,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  firstName: string | null;
+  minutes: number;
 }
 
 // Define the auth state interface
@@ -19,6 +21,8 @@ const defaultUser: User = {
   id: '123456',
   name: 'Demo User',
   email: 'user@example.com',
+  firstName: null,
+  minutes: 0,
 };
 
 // Initial state
@@ -49,11 +53,28 @@ export const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
     },
+    updateUserFirstName: (state, action: PayloadAction<string>) => {
+      if (state.user) {
+        state.user.firstName = action.payload;
+      }
+    },
+    updateUserMinutes: (state, action: PayloadAction<number>) => {
+      if (state.user) {
+        state.user.minutes = action.payload;
+      }
+    },
   },
 });
 
 // Export actions
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { 
+  loginStart, 
+  loginSuccess, 
+  loginFailure, 
+  logout, 
+  updateUserFirstName,
+  updateUserMinutes
+} = authSlice.actions;
 
 // Export reducer
 export default authSlice.reducer; 

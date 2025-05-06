@@ -4,8 +4,17 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/app/utils/supabase/client';
 import IntakeForm from '../components/IntakeForm';
+import Header from '../components/Header';
 import { useAppDispatch } from '../store/hooks';
 import { setInterviewData } from '../store/slices/conversationSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/app/store';
+import { fetchUserProfile } from '@/app/utils/api/profileApi';
+import { fetchUserMinutes, hasEnoughMinutes } from '@/app/utils/api/userApi';
+import MinutesDisplay from '../components/MinutesDisplay';
+
+// Constants for minute requirements
+const INTERVIEW_REQUIRED_MINUTES = 1;
 
 // Define form data types
 interface IntakeFormData {
@@ -31,6 +40,9 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
+  
+  // Get first name from Redux store
+  const userFirstName = useSelector((state: RootState) => state.auth.user?.firstName);
 
   // Check for auth error messages in localStorage and URL params
   useEffect(() => {
@@ -76,6 +88,12 @@ function DashboardContent() {
         } else {
           setSupabaseUser(data.user);
           console.log('Authenticated user:', data.user);
+          
+          // Fetch user profile and minutes data
+          await Promise.all([
+            fetchUserProfile(),
+            fetchUserMinutes()
+          ]);
         }
       } catch (err) {
         console.error('Authentication check error:', err);
@@ -87,8 +105,15 @@ function DashboardContent() {
     checkAuth();
   }, [router]);
 
+  // Get display name (first name or fallback to email)
+  const getDisplayName = () => {
+    if (userFirstName) return userFirstName;
+    if (supabaseUser?.email) return supabaseUser.email.split('@')[0];
+    return 'User';
+  };
+
   // Handle the "Start New Practice" button click
-  const handleStartPractice = () => {
+  const handleStartPractice = async () => {
     // First check if user is authenticated
     if (!supabaseUser) {
       // User is not authenticated, show popup instead of redirecting
@@ -98,7 +123,19 @@ function DashboardContent() {
       return;
     }
     
-    // User is authenticated, show the intake form
+    // Check if user has enough minutes
+    setIsLoading(true); // Show loading state
+    const hasMinutes = await hasEnoughMinutes(INTERVIEW_REQUIRED_MINUTES);
+    setIsLoading(false);
+    
+    if (!hasMinutes) {
+      // User doesn't have enough minutes, show an error
+      setAuthError(`You need at least ${INTERVIEW_REQUIRED_MINUTES} minute(s) to start a practice interview. Please purchase more minutes to continue.`);
+      setShowAuthPopup(true);
+      return;
+    }
+    
+    // User is authenticated and has enough minutes, show the intake form
     setShowIntakeForm(true);
   };
   
@@ -144,39 +181,86 @@ function DashboardContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Visa Interview Practice</h1>
-          <p className="mt-1 text-gray-600">
-            Practice your interview skills with our AI assistant.
-          </p>
+    <div className="flex flex-col min-h-screen">
+      {/* Use the Header component */}
+      <Header onAuthClick={() => setShowAuthPopup(true)} />
+
+      {/* Main content */}
+      <main className="flex-grow bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+              <p className="mt-1 text-gray-600">
+                Practice your interview skills with our AI assistant
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {supabaseUser && <MinutesDisplay />}
+              
+              {supabaseUser && (
+                <button
+                  type="button"
+                  onClick={handleStartPractice}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Start New Practice
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Welcome Card */}
+          {supabaseUser && !showIntakeForm && !isSubmitting && (
+            <div className="mt-8 bg-white shadow-lg rounded-xl p-8 text-center">
+              <div className="mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold mb-2">Welcome, {getDisplayName()}!</h2>
+              <p className="text-gray-600 mb-6">You're logged in. Click the button below to start a new practice interview.</p>
+              
+              <button
+                onClick={handleStartPractice}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Start Interview Practice
+              </button>
+            </div>
+          )}
+          
+          {!supabaseUser && !isLoading && (
+            <div className="mt-8 bg-white shadow-lg rounded-xl p-8 text-center">
+              <div className="mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-3V7m0 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
+              <p className="text-gray-600 mb-6">This application requires token-based authentication from the main application.</p>
+              
+              <button
+                onClick={() => setShowAuthPopup(true)}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Token Authentication Info
+              </button>
+          </div>
+          )}
         </div>
-        
-        {!supabaseUser ? (
-          <button
-            type="button"
-            onClick={() => setShowAuthPopup(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Token Auth Info
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleStartPractice}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Start New Practice
-          </button>
-        )}
-      </div>
+      </main>
       
       {/* Loading Overlay during submission */}
       {isSubmitting && (
@@ -184,15 +268,15 @@ function DashboardContent() {
           <div className="bg-white rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
             <div className="flex justify-center mb-4">
               <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-            </div>
+                    </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Preparing Interview...</h3>
             <p className="text-gray-600 mb-6">
               Setting up your practice session. You'll be redirected automatically in a moment.
             </p>
-          </div>
-        </div>
+                            </div>
+                          </div>
       )}
-      
+
       {/* Intake Form Modal */}
       {showIntakeForm && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto transition-opacity">
@@ -204,10 +288,10 @@ function DashboardContent() {
               showNavLink={true}
               submitButtonText="Start AI Interview"
             />
-          </div>
-        </div>
-      )}
-      
+                        </div>
+                      </div>
+                    )}
+
       {/* Auth Popup Modal */}
       {showAuthPopup && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto transition-opacity">
@@ -219,9 +303,9 @@ function DashboardContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">Authentication Required</h3>
+                <h3 className="text-lg font-bold text-gray-900">{authError?.includes('minutes') ? 'Insufficient Minutes' : 'Authentication Required'}</h3>
               </div>
-              <button 
+              <button
                 onClick={handleCloseAuthPopup}
                 className="text-gray-400 hover:text-gray-500"
               >
@@ -236,19 +320,41 @@ function DashboardContent() {
                 <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
                   <p>{authError}</p>
                 </div>
-              ) : null}
-              <p className="text-gray-600 mb-4">
-                <strong>Authentication Required</strong> - This application only supports token-based authentication.
-              </p>
-              <p className="text-gray-600 mb-4">
-                To use this application, you must access it through the main application that will provide the authentication token automatically.
-              </p>
-              <p className="text-gray-600 mb-4">
-                Direct login with email and password is not available.
-              </p>
-              <p className="text-sm text-gray-500">
-                If you were redirected here from the main application but are seeing this message, please ensure you have an active session in the main application.
-              </p>
+              ) : (
+                <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 rounded-md">
+                  <p>Authentication is required to access this feature.</p>
+                </div>
+              )}
+              
+              {authError?.includes('minutes') ? (
+                // Show purchase options if the error is about insufficient minutes
+                <div className="mt-4">
+                  <p className="text-gray-600 mb-2">
+                    You can purchase more interview minutes to continue practicing.
+                  </p>
+                  <div className="flex justify-center mt-4">
+                    <a
+                      href="/purchase"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Purchase Minutes
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                // Show auth info if the error is about authentication
+                <div>
+                  <p className="text-gray-600 mb-4">
+                    <strong>Authentication Required</strong> - This application only supports token-based authentication.
+                  </p>
+                  <p className="text-gray-600 mb-4">
+                    To use this application, you must access it through the main application that will provide the authentication token automatically.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    If you were redirected here from the main application but are seeing this message, please ensure you have an active session in the main application.
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end">
@@ -262,51 +368,6 @@ function DashboardContent() {
           </div>
         </div>
       )}
-      
-      {supabaseUser && !showIntakeForm && !isSubmitting && (
-        <div className="mt-8 bg-white shadow-lg rounded-xl p-8 text-center">
-          <div className="mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold mb-2">Welcome, {supabaseUser.email || 'User'}!</h2>
-          <p className="text-gray-600 mb-6">You're logged in. Click the button below to start a new practice interview.</p>
-          
-          <button
-            onClick={handleStartPractice}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Start Interview Practice
-          </button>
-        </div>
-      )}
-      
-      {!supabaseUser && !isLoading && (
-        <div className="mt-8 bg-white shadow-lg rounded-xl p-8 text-center">
-          <div className="mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H9m3-3V7m0 10a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">This application requires token-based authentication from the main application.</p>
-          
-          <button
-            onClick={() => setShowAuthPopup(true)}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Token Authentication Info
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -318,7 +379,7 @@ export default function Dashboard() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
         <p className="text-gray-600">Loading dashboard...</p>
-      </div>
+    </div>
     }>
       <DashboardContent />
     </Suspense>
