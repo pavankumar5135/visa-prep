@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
-import { fetchUserMinutes } from '@/app/utils/api/userApi';
 
 interface MinutesDisplayProps {
   className?: string;
@@ -18,15 +16,6 @@ export default function MinutesDisplay({
 }: MinutesDisplayProps) {
   // Get minutes from Redux store
   const minutes = useSelector((state: RootState) => state.auth.user?.minutes || 0);
-  
-  // Fetch minutes on component mount
-  useEffect(() => {
-    const loadMinutes = async () => {
-      await fetchUserMinutes();
-    };
-    
-    loadMinutes();
-  }, []);
   
   // Format minutes for display
   const formattedMinutes = minutes.toLocaleString();

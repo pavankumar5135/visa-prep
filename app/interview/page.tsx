@@ -9,13 +9,8 @@ import Header from '../components/Header';
 import { useSelector } from 'react-redux';
 import { createClient } from '@/app/utils/supabase/client';
 import { RootState } from '@/app/store';
-import { fetchUserProfile } from '@/app/utils/api/profileApi';
-import { fetchUserMinutes, deductUserMinutes, recordInterviewUsage } from '@/app/utils/api/userApi';
 import MinutesDisplay from '../components/MinutesDisplay';
 import { ConversationState } from '@/app/store/slices/conversationSlice';
-
-// Constants
-const INTERVIEW_REQUIRED_MINUTES = 1;
 
 // Define form data types
 interface InterviewData {
@@ -42,9 +37,6 @@ export default function InterviewPage() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  
-  // Set a flag to track if we've already deducted minutes for this session
-  const [minutesDeducted, setMinutesDeducted] = useState(false);
   
   const router = useRouter();
   
@@ -82,12 +74,6 @@ export default function InterviewPage() {
           setSupabaseUser(data.user);
           console.log('Authenticated user on interview page:', data.user);
           
-          // Fetch user profile using the API
-          await Promise.all([
-            fetchUserProfile(),
-            fetchUserMinutes()
-          ]);
-          
           setAuthChecked(true);
         }
       } catch (err) {
@@ -101,49 +87,6 @@ export default function InterviewPage() {
     
     checkAuth();
   }, [router]);
-  
-  // A new effect to deduct minutes when the interview starts
-  useEffect(() => {
-    async function handleInterviewStart() {
-      // Only proceed if authentication is checked and we haven't deducted minutes yet
-      if (!authChecked || minutesDeducted) return;
-      
-      // Check if this is a new interview session by looking at localStorage
-      const hasStarted = localStorage.getItem('hasStartedInterview');
-      
-      if (!hasStarted && interviewData) {
-        console.log('New interview session detected, deducting minutes');
-        
-        // Deduct minutes from the user's account
-        const success = await deductUserMinutes(INTERVIEW_REQUIRED_MINUTES);
-        
-        if (success) {
-          // Mark that we've deducted minutes for this session
-          setMinutesDeducted(true);
-          localStorage.setItem('hasStartedInterview', 'true');
-          
-          // Record this usage
-          await recordInterviewUsage(INTERVIEW_REQUIRED_MINUTES);
-          
-          // Refresh the minutes display
-          await fetchUserMinutes();
-          
-          console.log('Successfully deducted minutes for this interview session');
-        } else {
-          // Handle failure case - maybe user ran out of minutes
-          console.error('Failed to deduct minutes for this interview');
-          
-          // Show error message and redirect to dashboard
-          localStorage.setItem('authError', 'You need at least 1 minute to start an interview. Please purchase more minutes.');
-          router.push('/dashboard');
-        }
-      } else {
-        console.log('Interview already started or resuming a session, not deducting minutes');
-      }
-    }
-    
-    handleInterviewStart();
-  }, [authChecked, interviewData, minutesDeducted, router]);
   
   useEffect(() => {
     // Only retrieve interview data if authenticated
@@ -270,18 +213,11 @@ export default function InterviewPage() {
       // Give time for the "Interview Complete" screen to be visible before showing feedback
       const timer = setTimeout(() => {
         setShowFeedback(true);
-        
-        // Record the actual interview usage time
-        // This will help with analytics and potentially refunding unused minutes
-        const actualMinutesUsed = Math.ceil(elapsedTime / 60); // Convert seconds to minutes and round up
-        recordInterviewUsage(actualMinutesUsed);
-        
-        console.log(`Interview completed. Actual minutes used: ${actualMinutesUsed}`);
       }, 5000); // 5 seconds delay
       
       return () => clearTimeout(timer);
     }
-  }, [isInterviewComplete, showFeedback, elapsedTime]);
+  }, [isInterviewComplete, showFeedback]);
   
   // Handler for returning to dashboard from feedback section
   const handleReturnToDashboard = () => {
@@ -299,15 +235,6 @@ export default function InterviewPage() {
     
     // Set a flag to disable auto-redirect when landing on dashboard
     localStorage.setItem('disableAutoRedirect', 'true');
-    
-    // If the interview was started but not completed, let's record the partial usage
-    if (!isInterviewComplete && localStorage.getItem('hasStartedInterview')) {
-      const actualMinutesUsed = Math.ceil(elapsedTime / 60); // Convert seconds to minutes and round up
-      if (actualMinutesUsed > 0) {
-        recordInterviewUsage(actualMinutesUsed);
-        console.log(`Interview abandoned. Partial minutes used: ${actualMinutesUsed}`);
-      }
-    }
     
     // Clear the interview data to prevent auto-redirect
     localStorage.removeItem('interviewData');
@@ -743,7 +670,12 @@ export default function InterviewPage() {
                 </div>
               </div>
               <div className="p-8">
-                <Conversation interviewData={interviewData} apiKey={apikey} onViewFeedback={handleViewFeedback} />
+                <Conversation
+                  interviewData={interviewData}
+                  apiKey={apikey}
+                  onViewFeedback={handleViewFeedback}
+                  userId={supabaseUser?.id}
+                />
               </div>
             </div>
           )}

@@ -9,12 +9,7 @@ import { useAppDispatch } from '../store/hooks';
 import { setInterviewData } from '../store/slices/conversationSlice';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
-import { fetchUserProfile } from '@/app/utils/api/profileApi';
-import { fetchUserMinutes, hasEnoughMinutes } from '@/app/utils/api/userApi';
 import MinutesDisplay from '../components/MinutesDisplay';
-
-// Constants for minute requirements
-const INTERVIEW_REQUIRED_MINUTES = 1;
 
 // Define form data types
 interface IntakeFormData {
@@ -88,12 +83,6 @@ function DashboardContent() {
         } else {
           setSupabaseUser(data.user);
           console.log('Authenticated user:', data.user);
-          
-          // Fetch user profile and minutes data
-          await Promise.all([
-            fetchUserProfile(),
-            fetchUserMinutes()
-          ]);
         }
       } catch (err) {
         console.error('Authentication check error:', err);
@@ -113,7 +102,7 @@ function DashboardContent() {
   };
 
   // Handle the "Start New Practice" button click
-  const handleStartPractice = async () => {
+  const handleStartPractice = () => {
     // First check if user is authenticated
     if (!supabaseUser) {
       // User is not authenticated, show popup instead of redirecting
@@ -123,19 +112,7 @@ function DashboardContent() {
       return;
     }
     
-    // Check if user has enough minutes
-    setIsLoading(true); // Show loading state
-    const hasMinutes = await hasEnoughMinutes(INTERVIEW_REQUIRED_MINUTES);
-    setIsLoading(false);
-    
-    if (!hasMinutes) {
-      // User doesn't have enough minutes, show an error
-      setAuthError(`You need at least ${INTERVIEW_REQUIRED_MINUTES} minute(s) to start a practice interview. Please purchase more minutes to continue.`);
-      setShowAuthPopup(true);
-      return;
-    }
-    
-    // User is authenticated and has enough minutes, show the intake form
+    // User is authenticated, show the intake form
     setShowIntakeForm(true);
   };
   
@@ -189,29 +166,29 @@ function DashboardContent() {
       <main className="flex-grow bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
+        <div>
               <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
               <p className="mt-1 text-gray-600">
                 Practice your interview skills with our AI assistant
-              </p>
-            </div>
+          </p>
+        </div>
             
             <div className="flex items-center gap-4">
               {supabaseUser && <MinutesDisplay />}
               
               {supabaseUser && (
-                <button
-                  type="button"
-                  onClick={handleStartPractice}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Start New Practice
-                </button>
+            <button
+              type="button"
+          onClick={handleStartPractice}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+              Start New Practice
+            </button>
               )}
-            </div>
+      </div>
           </div>
           
           {/* Welcome Card */}
@@ -303,7 +280,7 @@ function DashboardContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900">{authError?.includes('minutes') ? 'Insufficient Minutes' : 'Authentication Required'}</h3>
+                <h3 className="text-lg font-bold text-gray-900">Authentication Required</h3>
               </div>
               <button
                 onClick={handleCloseAuthPopup}
@@ -312,51 +289,29 @@ function DashboardContent() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
-            </div>
+                  </button>
+                </div>
             
             <div className="mb-6">
               {authError ? (
                 <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
                   <p>{authError}</p>
                 </div>
-              ) : (
-                <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 rounded-md">
-                  <p>Authentication is required to access this feature.</p>
-                </div>
-              )}
-              
-              {authError?.includes('minutes') ? (
-                // Show purchase options if the error is about insufficient minutes
-                <div className="mt-4">
-                  <p className="text-gray-600 mb-2">
-                    You can purchase more interview minutes to continue practicing.
-                  </p>
-                  <div className="flex justify-center mt-4">
-                    <a
-                      href="/purchase"
-                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Purchase Minutes
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                // Show auth info if the error is about authentication
-                <div>
-                  <p className="text-gray-600 mb-4">
-                    <strong>Authentication Required</strong> - This application only supports token-based authentication.
-                  </p>
-                  <p className="text-gray-600 mb-4">
-                    To use this application, you must access it through the main application that will provide the authentication token automatically.
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    If you were redirected here from the main application but are seeing this message, please ensure you have an active session in the main application.
-                  </p>
-                </div>
-              )}
-            </div>
-            
+              ) : null}
+              <p className="text-gray-600 mb-4">
+                <strong>Authentication Required</strong> - This application only supports token-based authentication.
+              </p>
+              <p className="text-gray-600 mb-4">
+                To use this application, you must access it through the main application that will provide the authentication token automatically.
+              </p>
+              <p className="text-gray-600 mb-4">
+                Direct login with email and password is not available.
+              </p>
+              <p className="text-sm text-gray-500">
+                If you were redirected here from the main application but are seeing this message, please ensure you have an active session in the main application.
+              </p>
+          </div>
+                        
             <div className="flex justify-end">
               <button
                 onClick={handleCloseAuthPopup}
@@ -364,11 +319,11 @@ function DashboardContent() {
               >
                 Close
               </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
   );
 }
 

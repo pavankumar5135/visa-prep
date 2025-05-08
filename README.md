@@ -35,26 +35,6 @@ bash install-supabase.sh
 npm install @supabase/supabase-js @supabase/ssr
 ```
 
-4. Set up the Supabase database schema:
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Log in to Supabase
-supabase login
-
-# Link your project (replace 'project-ref' with your Supabase project reference)
-supabase link --project-ref your-project-ref
-
-# Apply migrations to create required tables
-supabase db push
-```
-
-This will create the required tables:
-- `profile` - Stores user profile information
-- `ai_agent_users` - Tracks user purchase units/minutes
-- `usage_tracking` - Records usage of minutes for analytics
-
 Then, run the development server:
 
 ```bash
@@ -87,56 +67,6 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 - Progress tracking and improvement suggestions
 - Authentication with Supabase
 - JWT Token authentication via URL (e.g., `example.com/dashboard?token=your_jwt_token`)
-- Minutes management system for tracking and limiting usage
-
-## Minutes Management System
-
-This application includes a comprehensive minutes management system for tracking and limiting usage:
-
-1. **Purchase Units**: Users have "minutes" (purchase_units) that are consumed when starting an interview
-2. **Usage Tracking**: The system records actual usage time for analytics and potential refunds
-3. **Validation**: The application checks if users have enough minutes before starting an interview
-4. **UI Integration**: Available minutes are displayed prominently throughout the interface
-
-### Database Schema
-
-The minutes management system uses two main tables:
-
-- **ai_agent_users** - Stores the available minutes for each user
-  ```sql
-  CREATE TABLE ai_agent_users (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES auth.users(id),
-      purchase_units INTEGER NOT NULL DEFAULT 0,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-  );
-  ```
-
-- **usage_tracking** - Records detailed usage information
-  ```sql
-  CREATE TABLE usage_tracking (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES auth.users(id),
-      minutes_used INTEGER NOT NULL DEFAULT 0,
-      usage_type TEXT NOT NULL,
-      timestamp TIMESTAMP WITH TIME ZONE DEFAULT now(),
-      interview_id UUID,
-      metadata JSONB
-  );
-  ```
-
-### Adding Minutes to User Account
-
-To add minutes to a user account, you can use the following SQL:
-
-```sql
--- Add 10 minutes to a user account
-INSERT INTO ai_agent_users (user_id, purchase_units)
-VALUES ('user-uuid', 10)
-ON CONFLICT (user_id) 
-DO UPDATE SET purchase_units = ai_agent_users.purchase_units + 10;
-```
 
 ## JWT Token Authentication
 

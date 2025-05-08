@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { createClient } from '@/app/utils/supabase/client';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
-import { fetchUserProfile } from '@/app/utils/api/profileApi';
-import { fetchUserMinutes } from '@/app/utils/api/userApi';
 import MinutesDisplay from './MinutesDisplay';
 
 interface HeaderProps {
@@ -29,12 +27,6 @@ export default function Header({ onAuthClick }: HeaderProps) {
         
         if (!error && data?.user) {
           setSupabaseUser(data.user);
-          
-          // Fetch user profile and minutes using the API
-          await Promise.all([
-            fetchUserProfile(),
-            fetchUserMinutes()
-          ]);
         }
       } catch (err) {
         console.error('Header authentication check error:', err);

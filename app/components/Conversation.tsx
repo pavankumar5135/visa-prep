@@ -39,9 +39,10 @@ interface ConversationProps {
   } | null;
   apiKey?: string; // Added API key option
   onViewFeedback?: () => void; // Callback to view feedback
+  userId?: string; // Add userId prop
 }
 
-export function Conversation({ interviewData, apiKey, onViewFeedback }: ConversationProps) {
+export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: ConversationProps) {
   // Get conversation state from Redux
   const {
     currentQuestion,
@@ -369,6 +370,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
           interviewData?.destinationCountry || "United States",
         employer: interviewData?.employer || "",
         client: interviewData?.client || "",
+        userId: userId || "", // Add userId to dynamic variables
       };
       console.log(apiKey, "apiKey");
 
@@ -422,7 +424,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback }: Conversa
       ));
       dispatch(setLoading(false));
     }
-  }, [conversation, interviewData, apiKey, storeConversationId, dispatch]);
+  }, [conversation, interviewData, apiKey, storeConversationId, dispatch, userId]);
 
   const stopConversation = useCallback(async () => {
     try {
