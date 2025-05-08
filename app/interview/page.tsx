@@ -695,145 +695,153 @@ export default function InterviewPage() {
                     <p className="text-green-100">Your interview lasted {formatTime(elapsedTime)}</p>
                   </div>
                 </div>
-                
                 <div className="p-8">
-                  <div className="mb-6 text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Congratulations!</h2>
-                    <p className="text-gray-600 max-w-xl mx-auto">
-                      You've successfully completed your visa interview practice. Here's your feedback:
-                    </p>
-                  </div>
-                  
-                  {analysis && analysis.score && (
-                    <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">Interview Score</h3>
-                        <div className="flex items-center">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            analysis.score >= 8 ? 'bg-green-100 text-green-800' : 
-                            analysis.score >= 6 ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            <span className="text-lg font-bold">{analysis.score}/10</span>
+                  {analysis ? (
+                    <>
+                      <div className="mb-6 text-center">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Congratulations!</h2>
+                        <p className="text-gray-600 max-w-xl mx-auto">
+                          You've successfully completed your visa interview practice. Here's your feedback:
+                        </p>
+                      </div>
+                      
+                      {analysis && analysis.score && (
+                        <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Interview Score</h3>
+                            <div className="flex items-center">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                analysis.score >= 8 ? 'bg-green-100 text-green-800' : 
+                                analysis.score >= 6 ? 'bg-yellow-100 text-yellow-800' : 
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                <span className="text-lg font-bold">{analysis.score}/10</span>
+                              </div>
+                            </div>
                           </div>
+                          <p className="text-gray-700 leading-relaxed">
+                            {analysis.comment || 'Your interview responses have been analyzed. Review the feedback below for insights on your performance.'}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                          <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            What You Did Well
+                          </h4>
+                          <ul className="space-y-2">
+                            {analysis && analysis.strengths && analysis.strengths.length > 0 ? (
+                              analysis.strengths.map((strength: string, index: number) => (
+                                <li key={index} className="flex items-start">
+                                  <span className="text-green-500 mr-2">•</span>
+                                  <span className="text-gray-700">{strength}</span>
+                                </li>
+                              ))
+                            ) : (
+                              <>
+                                <li className="flex items-start">
+                                  <span className="text-green-500 mr-2">•</span>
+                                  <span className="text-gray-700">Clear communication and articulation</span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="text-green-500 mr-2">•</span>
+                                  <span className="text-gray-700">Good evidence of ties to home country</span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="text-green-500 mr-2">•</span>
+                                  <span className="text-gray-700">Well-explained purpose of travel</span>
+                                </li>
+                              </>
+                            )}
+                          </ul>
+                        </div>
+                        
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                          <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Areas to Improve
+                          </h4>
+                          <ul className="space-y-2">
+                            {analysis && analysis.improvements && analysis.improvements.length > 0 ? (
+                              analysis.improvements.map((improvement: string, index: number) => (
+                                <li key={index} className="flex items-start">
+                                  <span className="text-yellow-500 mr-2">•</span>
+                                  <span className="text-gray-700">{improvement}</span>
+                                </li>
+                              ))
+                            ) : (
+                              <>
+                                <li className="flex items-start">
+                                  <span className="text-yellow-500 mr-2">•</span>
+                                  <span className="text-gray-700">More specific details about business activities</span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="text-yellow-500 mr-2">•</span>
+                                  <span className="text-gray-700">Better preparation for questions about previous travel</span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="text-yellow-500 mr-2">•</span>
+                                  <span className="text-gray-700">More clarity on financial arrangements</span>
+                                </li>
+                              </>
+                            )}
+                          </ul>
                         </div>
                       </div>
-                      <p className="text-gray-700 leading-relaxed">
-                        {analysis.comment || 'Your interview responses have been analyzed. Review the feedback below for insights on your performance.'}
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="grid md:grid-cols-2 gap-6 mb-8">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                      <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        What You Did Well
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysis && analysis.strengths && analysis.strengths.length > 0 ? (
-                          analysis.strengths.map((strength: string, index: number) => (
-                            <li key={index} className="flex items-start">
-                              <span className="text-green-500 mr-2">•</span>
-                              <span className="text-gray-700">{strength}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <>
-                            <li className="flex items-start">
-                              <span className="text-green-500 mr-2">•</span>
-                              <span className="text-gray-700">Clear communication and articulation</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="text-green-500 mr-2">•</span>
-                              <span className="text-gray-700">Good evidence of ties to home country</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="text-green-500 mr-2">•</span>
-                              <span className="text-gray-700">Well-explained purpose of travel</span>
-                            </li>
-                          </>
-                        )}
-                      </ul>
-                    </div>
-                    
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                      <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        Areas to Improve
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysis && analysis.improvements && analysis.improvements.length > 0 ? (
-                          analysis.improvements.map((improvement: string, index: number) => (
-                            <li key={index} className="flex items-start">
-                              <span className="text-yellow-500 mr-2">•</span>
-                              <span className="text-gray-700">{improvement}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <>
-                            <li className="flex items-start">
-                              <span className="text-yellow-500 mr-2">•</span>
-                              <span className="text-gray-700">More specific details about business activities</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="text-yellow-500 mr-2">•</span>
-                              <span className="text-gray-700">Better preparation for questions about previous travel</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="text-yellow-500 mr-2">•</span>
-                              <span className="text-gray-700">More clarity on financial arrangements</span>
-                            </li>
-                          </>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  {analysis && analysis.specificFeedback && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-8">
-                      <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        Try Saying It Like This
-                      </h4>
-                      <div className="space-y-4">
-                        {analysis.try_saying_it_like_this ? (
-                          <>
-                            <div className="bg-gray-50 p-3 rounded-lg">
-                              <p className="font-medium text-gray-800 mb-2 text-sm">Question:</p>
-                              <p className="text-gray-600">{analysis.try_saying_it_like_this.question}</p>
-                            </div>
-                            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
-                              <p className="font-medium text-gray-800 mb-2 text-sm">Suggested Response:</p>
-                              <p className="text-gray-700">{analysis.try_saying_it_like_this.suggested_answer}</p>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-gray-600">{analysis.specificFeedback || "Try to provide more specific and detailed responses to visa officer questions. Include relevant information about your travel plans, ties to your home country, and the purpose of your visit."}</p>
-                        )}
+                      
+                      {analysis && analysis.specificFeedback && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-8">
+                          <h4 className="text-md font-medium text-gray-900 flex items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                            Try Saying It Like This
+                          </h4>
+                          <div className="space-y-4">
+                            {analysis.try_saying_it_like_this ? (
+                              <>
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <p className="font-medium text-gray-800 mb-2 text-sm">Question:</p>
+                                  <p className="text-gray-600">{analysis.try_saying_it_like_this.question}</p>
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                                  <p className="font-medium text-gray-800 mb-2 text-sm">Suggested Response:</p>
+                                  <p className="text-gray-700">{analysis.try_saying_it_like_this.suggested_answer}</p>
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-gray-600">{analysis.specificFeedback || "Try to provide more specific and detailed responses to visa officer questions. Include relevant information about your travel plans, ties to your home country, and the purpose of your visit."}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-center gap-4">
+                        <button 
+                          onClick={handleReturnToDashboard}
+                          className="px-6 py-3 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-105"
+                        >
+                          Return to Dashboard
+                        </button>
                       </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center mb-6">
+                      <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-green-600 mb-4"></div>
+                      <p className="text-sm text-gray-600">Analyzing your interview performance...</p>
                     </div>
                   )}
-                  
-                  <div className="flex justify-center gap-4">
-                    <button 
-                      onClick={handleReturnToDashboard}
-                      className="px-6 py-3 rounded-full shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-105"
-                    >
-                      Return to Dashboard
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>

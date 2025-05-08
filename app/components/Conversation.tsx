@@ -69,6 +69,9 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
   // Use a ref to track if analysis has been performed
   const analysisPerformedRef = useRef<boolean>(false);
   
+  // Track whether to show the interview complete container
+  const [showInterviewComplete, setShowInterviewComplete] = useState(false);
+  
   // Initialize hasStartedOnce from localStorage on component mount
   useEffect(() => {
     const hasStarted = localStorage.getItem('hasStartedInterview') === 'true';
@@ -129,6 +132,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
       dispatch(setInterviewActive(true));
       dispatch(resetElapsedTime());
       dispatch(setLoading(false));
+      setShowInterviewComplete(false);
     },
     onDisconnect: () => {
       console.log("Disconnected, current conversation ID:", convIdRef.current);
@@ -144,6 +148,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
       } else {
         console.log("Skipping automatic analysis as it was either already performed or this is a manual disconnect");
       }
+      setShowInterviewComplete(true);
     },
     onMessage: (message: ConversationMessage) => {
       console.log("Message:", message);
@@ -526,7 +531,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       {/* Show either the interview interface or the completion feedback */}
-      {interviewStage === "complete" ? (
+      {showInterviewComplete ? (
         /* Feedback section - appears after interview is complete */
         <div className="w-full mt-4 sm:mt-6 p-6 bg-green-50 border border-green-100 rounded-xl text-center animate-fadeIn">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
