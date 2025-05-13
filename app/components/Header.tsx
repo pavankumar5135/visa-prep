@@ -9,9 +9,17 @@ import MinutesDisplay from './MinutesDisplay';
 
 interface HeaderProps {
   onAuthClick?: () => void;
+  title?: string;
+  subtitle?: string;
+  type?: 'visa' | 'healthcare';
 }
 
-export default function Header({ onAuthClick }: HeaderProps) {
+export default function Header({ 
+  onAuthClick,
+  title = "Visa Interview Preparation",
+  subtitle = "Practice your visa interview skills with AI",
+  type = "visa"
+}: HeaderProps) {
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -49,6 +57,9 @@ export default function Header({ onAuthClick }: HeaderProps) {
     if (supabaseUser?.email) return supabaseUser.email.charAt(0).toUpperCase();
     return 'U';
   };
+  
+  // Determine color theme based on type
+  const primaryColor = type === 'healthcare' ? 'teal' : 'blue';
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -57,10 +68,16 @@ export default function Header({ onAuthClick }: HeaderProps) {
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center">
               <h1 className="text-lg font-semibold text-gray-900">
-                <span className="text-blue-600">CaresLink</span>
-                <span className="ml-1 p-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">AI</span>
+                <span className={`text-${primaryColor}-600`}>CaresLink</span>
+                <span className={`ml-1 p-1 bg-${primaryColor}-100 text-${primaryColor}-800 text-xs font-medium rounded`}>AI</span>
               </h1>
             </Link>
+            {(title || subtitle) && (
+              <div className="hidden md:block ml-6 pl-6 border-l border-gray-200">
+                {title && <h2 className="text-sm font-medium text-gray-900">{title}</h2>}
+                {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+              </div>
+            )}
           </div>
           
           {!isLoading && (
@@ -73,8 +90,8 @@ export default function Header({ onAuthClick }: HeaderProps) {
                       <p className="text-sm font-medium text-gray-900">{getDisplayName()}</p>
                     </div>
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-800 font-medium">
+                  <div className={`h-8 w-8 rounded-full bg-${primaryColor}-100 flex items-center justify-center`}>
+                    <span className={`text-${primaryColor}-800 font-medium`}>
                       {getInitials()}
                     </span>
                   </div>
@@ -83,7 +100,7 @@ export default function Header({ onAuthClick }: HeaderProps) {
                 <button
                   type="button"
                   onClick={onAuthClick}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className={`inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-${primaryColor}-600 hover:bg-${primaryColor}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${primaryColor}-500`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

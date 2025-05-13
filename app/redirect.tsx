@@ -29,10 +29,11 @@ export default function AutoRedirect() {
     const disableRedirect = localStorage.getItem('disableAutoRedirect');
     const completedFlag = localStorage.getItem('completedInterview');
     const interviewCompleted = localStorage.getItem('interviewCompleted');
+    const currentPath = window.location.pathname;
     
     console.log('Redirect check #' + checkCount, {
       hasData: !!storedData,
-      path: window.location.pathname,
+      path: currentPath,
       editFlag,
       disableRedirect,
       completedFlag,
@@ -63,22 +64,30 @@ export default function AutoRedirect() {
       return;
     }
     
-    // Only redirect if we have interview data, we're on the dashboard, 
+    // Check if we're on a dashboard page
+    const isDashboardPage = currentPath === '/dashboard' || currentPath === '/visa-prep/dashboard';
+    
+    // Only redirect if we have interview data, we're on a dashboard page, 
     // no flags are set to prevent redirection, and interview is not completed
     if (storedData && 
-        window.location.pathname === '/dashboard' && 
+        isDashboardPage && 
         editFlag !== 'true' && 
         disableRedirect !== 'true' &&
         interviewCompleted !== 'true' &&
         completedFlag !== 'true') {
       setRedirecting(true);
       
-      // Redirect to interview page
-      console.log('Auto-redirect: Found interview data, redirecting to /interview');
+      // Determine the correct interview page based on current path
+      const interviewPath = currentPath.startsWith('/visa-prep') 
+        ? '/visa-prep/interview' 
+        : '/interview';
+      
+      // Redirect to the appropriate interview page
+      console.log(`Auto-redirect: Found interview data, redirecting to ${interviewPath}`);
       
       // Use setTimeout to ensure this runs after any competing navigation
       const redirectTimer = setTimeout(() => {
-        window.location.href = '/interview';
+        window.location.href = interviewPath;
       }, 500);
       
       return () => clearTimeout(redirectTimer);

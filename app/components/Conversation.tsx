@@ -1,7 +1,7 @@
 "use client";
 
 import { useConversation } from "@11labs/react";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { 
   setConversationId, 
@@ -26,24 +26,44 @@ interface ConversationMessage {
   source: Role;
 }
 
+// Define types for different interview data
+interface VisaInterviewData {
+  name: string;
+  role: string;
+  visaType: string;
+  originCountry: string;
+  destinationCountry: string;
+  employer: string;
+  client?: string;
+}
+
+interface HealthcareInterviewData {
+  name: string;
+  role: string;
+  employer: string;
+  jobDescription: string;
+  businessUnit: string;
+  careSpeciality: string;
+  yearsExperience: string;
+  interviewType: string;
+  location: string;
+}
+
 // Define props interface to accept interview data
 interface ConversationProps {
-  interviewData?: {
-    name: string;
-    role: string;
-    visaType: string;
-    originCountry: string;
-    destinationCountry: string;
-    employer: string;
-    client?: string;
-  } | null;
+  interviewData?: VisaInterviewData | HealthcareInterviewData | null;
   apiKey?: string; // Added API key option
   onViewFeedback?: () => void; // Callback to view feedback
   userId?: string; // Add userId prop
+  type?: 'visa' | 'healthcare'; // Added type parameter to distinguish interview types
+  agentId?: string; // Add agent ID as a prop
 }
 
-export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: ConversationProps) {
+export function Conversation({ interviewData, apiKey, onViewFeedback, userId, type, agentId }: ConversationProps) {
   // Get conversation state from Redux
+  const conversationState = useAppSelector((state: { conversation: any }) => state.conversation);
+  
+  // Extract only needed state properties to avoid unnecessary re-renders
   const {
     currentQuestion,
     feedback,
@@ -53,9 +73,31 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
     isLoading,
     error,
     conversationId
-  } = useAppSelector((state: { conversation: any }) => state.conversation);
+  } = conversationState;
   
   const dispatch = useAppDispatch();
+  
+  // Memoize the interview data to check later for changes
+  const memoizedInterviewData = useMemo(() => interviewData, [
+    interviewData?.name,
+    interviewData?.role,
+    interviewData?.employer,
+    // Include all potential fields from both types
+    ...(type === 'visa' && interviewData && 'visaType' in interviewData ? [
+      interviewData.visaType,
+      interviewData.originCountry,
+      interviewData.destinationCountry,
+      interviewData.client
+    ] : []),
+    ...(type === 'healthcare' && interviewData && 'jobDescription' in interviewData ? [
+      interviewData.jobDescription,
+      interviewData.businessUnit,
+      interviewData.careSpeciality,
+      interviewData.yearsExperience,
+      interviewData.interviewType,
+      interviewData.location
+    ] : [])
+  ]);
   
   // Track if interview has been started in this session
   const [hasStartedOnce, setHasStartedOnce] = useState(false);
@@ -77,10 +119,28 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
   
   // Store interviewData in Redux when it changes
   useEffect(() => {
-    if (interviewData) {
-      dispatch(setInterviewData(interviewData));
+    if (memoizedInterviewData) {
+      // Avoid dispatching if the data is already in Redux with the same type
+      const currentType = conversationState.type;
+      const currentData = conversationState.data;
+      
+      // Check if we're in a healthcare interview based on URL path
+      // This is the safest way to determine which type of interview it is
+      const isHealthcare = window.location.pathname.includes('healthcare-interviews');
+      const interviewType = isHealthcare ? 'healthcare' : 'visa';
+      
+      // Only dispatch if the data is different or the type is different
+      if (!currentData || 
+          currentType !== interviewType || 
+          JSON.stringify(currentData) !== JSON.stringify(memoizedInterviewData)) {
+        
+        dispatch(setInterviewData({
+          type: interviewType,
+          data: memoizedInterviewData
+        }));
+      }
     }
-  }, [interviewData, dispatch]);
+  }, [memoizedInterviewData, dispatch, conversationState.type, conversationState.data]);
   
   // Keep the ref in sync with the Redux state
   useEffect(() => {
@@ -277,7 +337,8 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
                 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
               },
               body: JSON.stringify({
-                transcript: data.transcript
+                transcript: data.transcript,
+                type: type
               }),
             });
             
@@ -356,29 +417,44 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      const agentId =
-        process.env.NEXT_PUBLIC_ELEVEN_LABS_AGENT_ID || "8xzGLFDx4PMsfYMFGWIb";
+      // Use the agent ID from props or fall back to defaults
+      const effectiveAgentId = agentId || "";
+
+      console.log(`Using ${type || 'default'} interview agent ID:`, effectiveAgentId);
 
       // Prepare dynamic variables
       const dynamicVariables = {
         greeting: getTimeBasedGreeting(),
         name: interviewData?.name || "John Doe",
         role: interviewData?.role || "Software Engineer",
-        visaType: interviewData?.visaType || "H-1B",
-        originCountry: interviewData?.originCountry || "India",
-        destinationCountry:
-          interviewData?.destinationCountry || "United States",
         employer: interviewData?.employer || "",
-        client: interviewData?.client || "",
         userId: userId || "", // Add userId to dynamic variables
       };
+      
+      // Add type-specific variables
+      if (type === 'visa' && interviewData && 'visaType' in interviewData) {
+        Object.assign(dynamicVariables, {
+          visaType: interviewData.visaType,
+          originCountry: interviewData.originCountry,
+          destinationCountry: interviewData.destinationCountry,
+          client: interviewData.client || ""
+        });
+      } else if (type === 'healthcare' && interviewData && 'jobDescription' in interviewData) {
+        Object.assign(dynamicVariables, {
+          jobDescription: interviewData.jobDescription,
+          businessUnit: interviewData.businessUnit,
+          careSpeciality: interviewData.careSpeciality,
+          yearsExperience: interviewData.yearsExperience
+        });
+      }
+      
       console.log(apiKey, "apiKey");
 
       let sessionId: string = "";
       // If API key authentication is enabled, get a signed URL
       if (apiKey) {
         try {
-          const signedUrl = await getSignedUrl(agentId);
+          const signedUrl = await getSignedUrl(effectiveAgentId);
           console.log("Signed URL:", signedUrl);
           // Start the conversation with the signed URL
          sessionId = await conversation.startSession({
@@ -395,7 +471,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
       } else {
         // Use direct agent ID approach (less secure, for development only)
        sessionId = await conversation.startSession({
-          agentId,
+          agentId: effectiveAgentId,
           dynamicVariables,
         });
         console.log("Conversation started with agent ID, got sessionId:", sessionId);
@@ -424,7 +500,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId }: 
       ));
       dispatch(setLoading(false));
     }
-  }, [conversation, interviewData, apiKey, storeConversationId, dispatch, userId]);
+  }, [conversation, interviewData, apiKey, storeConversationId, dispatch, userId, type, agentId]);
 
   const stopConversation = useCallback(async () => {
     try {

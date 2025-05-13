@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const token = searchParams.get('token')
   
   // If token exists, redirect to a special route that will handle it
-  if (token && pathname === '/dashboard') {
+  if (token && (pathname === '/dashboard' || pathname === '/visa-prep/dashboard' || pathname === '/healthcare-interviews/dashboard')) {
     const url = new URL('/auth/token', request.url)
     url.searchParams.set('token', token)
     url.searchParams.set('redirect', pathname)
@@ -19,7 +19,9 @@ export async function middleware(request: NextRequest) {
   }
   
   // Only check authentication for interview paths
-  if (pathname.startsWith('/interview')) {
+  if (pathname.startsWith('/interview') || 
+      pathname.startsWith('/visa-prep/interview') || 
+      pathname.startsWith('/healthcare-interviews/interview')) {
     // Create a server client
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,10 +53,18 @@ export async function middleware(request: NextRequest) {
     // Check if user is authenticated
     const { data: { session } } = await supabase.auth.getSession()
     
-    // If not authenticated, redirect to dashboard with an error message
+    // If not authenticated, redirect to the appropriate dashboard with an error message
     if (!session) {
-      // Create URL for the dashboard
-      const dashboardUrl = new URL('/dashboard', request.url)
+      // Determine the redirect URL based on the requested path
+      let dashboardUrl;
+      if (pathname.startsWith('/visa-prep/')) {
+        dashboardUrl = new URL('/visa-prep/dashboard', request.url);
+      } else if (pathname.startsWith('/healthcare-interviews/')) {
+        dashboardUrl = new URL('/healthcare-interviews/dashboard', request.url);
+      } else {
+        dashboardUrl = new URL('/dashboard', request.url);
+      }
+      
       dashboardUrl.searchParams.set('auth_error', 'You must be logged in to access the interview page')
       
       // Redirect to the dashboard with the error parameter

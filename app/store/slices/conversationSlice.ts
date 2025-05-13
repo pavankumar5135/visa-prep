@@ -1,5 +1,29 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+// Define visa interview data type
+interface VisaInterviewData {
+  name: string;
+  role: string;
+  visaType: string;
+  originCountry: string;
+  destinationCountry: string;
+  employer: string;
+  client?: string;
+}
+
+// Define healthcare interview data type
+interface HealthcareInterviewData {
+  name: string;
+  jobDescription: string;
+  role: string;
+  businessUnit: string;
+  careSpeciality: string;
+  yearsExperience: string;
+  interviewType: string;
+  employer: string;
+  location: string;
+}
+
 // Define the conversation state interface
 export interface ConversationState {
   conversationId: string;
@@ -26,16 +50,9 @@ export interface ConversationState {
       suggested_answer: string;
     };
   } | null;
-  // Add any interview data we want to store
-  interviewData: {
-    name: string;
-    role: string;
-    visaType: string;
-    originCountry: string;
-    destinationCountry: string;
-    employer: string;
-    client?: string;
-  } | null;
+  // Interview data with type
+  type: 'visa' | 'healthcare' | null;
+  data: VisaInterviewData | HealthcareInterviewData | null;
 }
 
 // Initial state
@@ -49,7 +66,8 @@ const initialState: ConversationState = {
   isLoading: false,
   error: null,
   analysis: null,
-  interviewData: null
+  type: null,
+  data: null
 };
 
 // Create the conversation slice
@@ -87,14 +105,20 @@ export const conversationSlice = createSlice({
     setAnalysis: (state, action: PayloadAction<ConversationState['analysis']>) => {
       state.analysis = action.payload;
     },
-    setInterviewData: (state, action: PayloadAction<ConversationState['interviewData']>) => {
-      state.interviewData = action.payload;
+    // Updated to handle both types of interview data
+    setInterviewData: (state, action: PayloadAction<{
+      type: 'visa' | 'healthcare';
+      data: VisaInterviewData | HealthcareInterviewData;
+    }>) => {
+      state.type = action.payload.type;
+      state.data = action.payload.data;
     },
     resetConversation: (state) => {
       return { 
         ...initialState,
         analysis: state.analysis,
-        interviewData: state.interviewData // Keep interview data
+        type: state.type,
+        data: state.data // Keep interview data
       };
     }
   },
