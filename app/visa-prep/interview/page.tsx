@@ -873,29 +873,4 @@ export default function InterviewPage() {
 
 // Add animation styles for the component
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
-// Add a style tag at the end to ensure animations work properly
-export function StyleProvider() {
-  return (
-    <style jsx global>{`
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      
-      @keyframes slideIn {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-      
-      .animate-fadeIn {
-        animation: fadeIn 0.3s ease-in-out;
-      }
-      
-      .animate-slideIn {
-        animation: slideIn 0.3s ease-out;
-      }
-    `}</style>
-  );
-} 
+export const dynamicParams = true; 
