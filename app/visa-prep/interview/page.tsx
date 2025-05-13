@@ -568,7 +568,8 @@ export default function InterviewPage() {
                         onViewFeedback={handleViewFeedback}
                         userId={supabaseUser?.id}
                         type="visa"
-                        agentId={process.env.NEXT_PUBLIC_SUPA_VISA_PREP_AGENT_UUID || "8xzGLFDx4PMsfYMFGWIb"}
+                        supabaseAgentId={process.env.NEXT_PUBLIC_SUPA_VISA_PREP_AGENT_UUID || "8xzGLFDx4PMsfYMFGWIb"}
+                        elevenlabsAgentId={process.env.NEXT_PUBLIC_ELEVENLABS_VISA_AGENT_UUID || "visa_elevenlabs_agent"}
                       />
                     )}
                   </div>

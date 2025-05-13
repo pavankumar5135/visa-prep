@@ -56,10 +56,19 @@ interface ConversationProps {
   onViewFeedback?: () => void; // Callback to view feedback
   userId?: string; // Add userId prop
   type?: 'visa' | 'healthcare'; // Added type parameter to distinguish interview types
-  agentId?: string; // Add agent ID as a prop
+  supabaseAgentId?: string; // Agent ID for Supabase database operations
+  elevenlabsAgentId?: string; // Agent ID for ElevenLabs API calls
 }
 
-export function Conversation({ interviewData, apiKey, onViewFeedback, userId, type, agentId }: ConversationProps) {
+export function Conversation({ 
+  interviewData, 
+  apiKey, 
+  onViewFeedback, 
+  userId, 
+  type, 
+  supabaseAgentId, 
+  elevenlabsAgentId 
+}: ConversationProps) {
   // Get conversation state from Redux
   const conversationState = useAppSelector((state: { conversation: any }) => state.conversation);
   
@@ -417,10 +426,11 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId, ty
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Use the agent ID from props or fall back to defaults
-      const effectiveAgentId = agentId || "";
+      // Use specific agent IDs or fall back to empty string
+      const effectiveSupabaseAgentId = supabaseAgentId || "";
+      const effectiveElevenlabsAgentId = elevenlabsAgentId || "";
 
-      console.log(`Using ${type || 'default'} interview agent ID:`, effectiveAgentId);
+      console.log(`Using ${type || 'default'} interview agents - Supabase: ${effectiveSupabaseAgentId}, ElevenLabs: ${effectiveElevenlabsAgentId}`);
 
       // Prepare dynamic variables
       const dynamicVariables = {
@@ -429,6 +439,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId, ty
         role: interviewData?.role || "Software Engineer",
         employer: interviewData?.employer || "",
         userId: userId || "", // Add userId to dynamic variables
+        agentId: effectiveSupabaseAgentId, // Add the Supabase agent ID to dynamic variables
       };
       
       // Add type-specific variables
@@ -454,7 +465,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId, ty
       // If API key authentication is enabled, get a signed URL
       if (apiKey) {
         try {
-          const signedUrl = await getSignedUrl(effectiveAgentId);
+          const signedUrl = await getSignedUrl(effectiveElevenlabsAgentId);
           console.log("Signed URL:", signedUrl);
           // Start the conversation with the signed URL
          sessionId = await conversation.startSession({
@@ -471,7 +482,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId, ty
       } else {
         // Use direct agent ID approach (less secure, for development only)
        sessionId = await conversation.startSession({
-          agentId: effectiveAgentId,
+          agentId: effectiveSupabaseAgentId,
           dynamicVariables,
         });
         console.log("Conversation started with agent ID, got sessionId:", sessionId);
@@ -500,7 +511,7 @@ export function Conversation({ interviewData, apiKey, onViewFeedback, userId, ty
       ));
       dispatch(setLoading(false));
     }
-  }, [conversation, interviewData, apiKey, storeConversationId, dispatch, userId, type, agentId]);
+  }, [conversation, interviewData, apiKey, storeConversationId, dispatch, userId, type, supabaseAgentId, elevenlabsAgentId]);
 
   const stopConversation = useCallback(async () => {
     try {

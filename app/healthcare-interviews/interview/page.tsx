@@ -570,7 +570,8 @@ export default function InterviewPage() {
                         onViewFeedback={handleViewFeedback}
                         userId={supabaseUser?.id}
                         type="healthcare"
-                        agentId={process.env.NEXT_PUBLIC_SUPA_HEALTHCARE_INTERVIEW_AGENT_UUID || "healthcare_interview_agent_id"}
+                        supabaseAgentId={process.env.NEXT_PUBLIC_SUPA_HEALTHCARE_INTERVIEW_AGENT_UUID || "healthcare_interview_agent_id"}
+                        elevenlabsAgentId={process.env.NEXT_PUBLIC_ELEVENLABS_HEALTHCARE_AGENT_UUID || "healthcare_elevenlabs_agent"}
                       />
                     )}
                   </div>
