@@ -450,6 +450,7 @@ export function Conversation({
           destinationCountry: interviewData.destinationCountry,
           client: interviewData.client || ""
         });
+        console.log(dynamicVariables, "dynamicVariables healthcare");
       } else if (type === 'healthcare' && interviewData && 'jobDescription' in interviewData) {
         Object.assign(dynamicVariables, {
           jobDescription: interviewData.jobDescription,
@@ -625,7 +626,7 @@ export function Conversation({
             Interview Complete
           </h3>
           <p className="text-gray-600 mb-6">
-            Congratulations! You've successfully completed your visa interview practice. Your session lasted {formatTime(elapsedTime)}.
+            Congratulations! You've successfully completed your {type === 'visa' ? 'visa' : 'healthcare'} interview practice. Your session lasted {formatTime(elapsedTime)}.
           </p>
           {isAnalyzing ? (
             <div className="flex flex-col items-center justify-center mb-6">
@@ -694,7 +695,9 @@ export function Conversation({
                     />
                   </svg>
                 </div>
-                <div className="ml-2 font-medium text-gray-700">Visa Officer</div>
+                <div className="ml-2 font-medium text-gray-700">
+                  {type === 'visa' ? 'Visa Officer' : 'Healthcare Interviewer'}
+                </div>
               </div>
 
               {conversation.status === "connected" && conversation.isSpeaking && (
