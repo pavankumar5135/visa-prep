@@ -14,6 +14,7 @@ import MinutesDisplay from '../../components/MinutesDisplay';
 // Define form data types
 interface HealthcareIntakeFormData {
   name: string;
+  jobTitle: string;
   jobDescription: string;
   role: string;
   businessUnit: string;

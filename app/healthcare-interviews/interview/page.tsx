@@ -266,6 +266,7 @@ export default function InterviewPage() {
   // Function to handle form submission from HealthcareIntakeForm
   const handleEditFormSubmit = (formData: {
     name: string;
+    jobTitle: string;
     jobDescription: string;
     role: string;
     businessUnit: string;
