@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Visa Interview AI Coach",
-  description: "Practice and prepare for your B1 visa interview with our AI assistant",
+  title: "CaresLink AI",
+  description: "Practice and prepare for your interview with our AI assistant",
 };
 
 export default function RootLayout({

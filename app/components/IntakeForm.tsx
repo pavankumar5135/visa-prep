@@ -371,7 +371,7 @@ export default function IntakeForm({
         {/* Form Actions */}
         <div className="pt-4 sm:pt-6 border-t border-gray-200 mt-6 sm:mt-8">
           <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-            <div className="flex flex-col xs:flex-row gap-2">
+            <div className="flex flex-row gap-2">
               <button
                 type="button"
                 onClick={onCancel}
@@ -386,7 +386,7 @@ export default function IntakeForm({
                   onClick={handleClearForm}
                   className="w-full xs:w-auto px-8 py-3 border border-gray-300 rounded-2xl shadow-sm text-lg font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                 >
-                  Clear Form
+                  Clear
                 </button>
               )}
             </div>

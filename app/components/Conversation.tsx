@@ -450,7 +450,6 @@ export function Conversation({
           destinationCountry: interviewData.destinationCountry,
           client: interviewData.client || ""
         });
-        console.log(dynamicVariables, "dynamicVariables healthcare");
       } else if (type === 'healthcare' && interviewData && 'jobDescription' in interviewData) {
         Object.assign(dynamicVariables, {
           jobDescription: interviewData.jobDescription,

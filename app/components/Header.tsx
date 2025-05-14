@@ -59,19 +59,19 @@ export default function Header({
   };
   
   // Determine color theme based on type
-  const primaryColor = type === 'healthcare' ? 'teal' : 'blue';
+  const primaryColor = 'blue';
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/dashboard" className="flex items-center">
+            <div className="flex items-center">
               <h1 className="text-lg font-semibold text-gray-900">
                 <span className={`text-${primaryColor}-600`}>CaresLink</span>
                 <span className={`ml-1 p-1 bg-${primaryColor}-100 text-${primaryColor}-800 text-xs font-medium rounded`}>AI</span>
               </h1>
-            </Link>
+            </div>
             {(title || subtitle) && (
               <div className="hidden md:block ml-6 pl-6 border-l border-gray-200">
                 {title && <h2 className="text-sm font-medium text-gray-900">{title}</h2>}

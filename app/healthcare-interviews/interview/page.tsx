@@ -114,6 +114,7 @@ function MinutesValue({ agentId }: { agentId: string }) {
 // Define form data types for healthcare
 interface HealthcareInterviewData {
   name: string;
+  jobTitle: string;
   jobDescription: string;
   role: string;
   businessUnit: string;
@@ -467,10 +468,6 @@ export default function InterviewPage() {
                           <span className="text-xs text-indigo-500 font-medium">Years Experience</span>
                           <p className="font-medium text-gray-800 mt-1">{interviewData.yearsExperience}</p>
                         </div>
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                          <span className="text-xs text-indigo-500 font-medium">Interview Type</span>
-                          <p className="font-medium text-gray-800 mt-1">{interviewData.interviewType}</p>
-                        </div>
                       </div>
                     </div>
                     
@@ -505,6 +502,10 @@ export default function InterviewPage() {
                         Healthcare Details
                       </h5>
                       <div className="space-y-3 text-sm">
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <span className="text-xs text-indigo-500 font-medium">Job Title</span>
+                          <p className="font-medium text-gray-800 mt-1">{interviewData.jobTitle || "—"}</p>
+                        </div>
                         <div className="bg-gray-50 p-2 rounded-lg">
                           <span className="text-xs text-indigo-500 font-medium">Job Description</span>
                           <p className="font-medium text-gray-800 mt-1">{interviewData.jobDescription || "—"}</p>
